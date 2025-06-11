@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
-import { Copy, Star, BookOpen, MessageSquare, BarChart3, Check } from 'lucide-react'
+import { Copy, Star, BookOpen, MessageSquare, BarChart3, Check, ThumbsUp } from 'lucide-react'
 import { usePromptRatings, usePromptFeedback } from '@/hooks/useRatings'
+import { useQuickRating } from '@/hooks/useQuickRating'
 import RatingModal from '@/components/ratings/RatingModal'
-import RatingDisplay from '@/components/ratings/RatingDisplay'
+import QuickRatingModal from '@/components/ratings/QuickRatingModal'
+import SuccessStoryModal from '@/components/ratings/SuccessStoryModal'
+import PromptRatingDisplay from '@/components/ratings/PromptRatingDisplay'
 import FeedbackList from '@/components/ratings/FeedbackList'
 import Badge from '@/components/ui/Badge'
 import { toast } from 'sonner'
@@ -19,7 +22,7 @@ interface PromptCardProps {
     notes: string | null
     created_at: string
   }
-  promptType: 'book' | 'user'
+  promptType: 'book' | 'user' | 'library'
   onSave?: (id: string) => void
   onEdit?: (prompt: any) => void
   onDelete?: (id: string) => void
@@ -40,10 +43,13 @@ export default function PromptCard({
 }: PromptCardProps) {
   const [copied, setCopied] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
+  const [showQuickRatingModal, setShowQuickRatingModal] = useState(false)
+  const [showSuccessStoryModal, setShowSuccessStoryModal] = useState(false)
   const [showFeedbackSection, setShowFeedbackSection] = useState(showFeedback)
 
   const { stats, userRating, submitRating } = usePromptRatings(prompt.id, promptType)
   const { feedback, submitFeedback, markHelpful } = usePromptFeedback(prompt.id, promptType)
+  const { submitQuickRating, submitSuccessStory } = useQuickRating()
 
   const isBookPrompt = promptType === 'book'
   const promptText = isBookPrompt ? (prompt as BookPrompt).prompt : (prompt as any).prompt_text
@@ -56,6 +62,24 @@ export default function PromptCard({
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
       toast.error('Failed to copy prompt')
+    }
+  }
+
+  const handleQuickRating = async (rating: number, feedback?: string, shareStory?: boolean) => {
+    try {
+      await submitQuickRating(prompt.id, promptType, rating, feedback, shareStory)
+      toast.success('Rating submitted!')
+    } catch (error: any) {
+      toast.error(error.message)
+    }
+  }
+
+  const handleSuccessStory = async (story: any) => {
+    try {
+      await submitSuccessStory(prompt.id, promptType, story)
+      toast.success('Success story shared! You earned 30 points 🎉')
+    } catch (error: any) {
+      toast.error(error.message)
     }
   }
 
@@ -81,7 +105,9 @@ export default function PromptCard({
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
             isBookPrompt 
               ? 'bg-primary-100 text-primary-600' 
-              : 'bg-success-100 text-success-600'
+              : promptType === 'library'
+                ? 'bg-purple-100 text-purple-600'
+                : 'bg-success-100 text-success-600'
           }`}>
             {isBookPrompt ? <BookOpen className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
           </div>
@@ -113,14 +139,32 @@ export default function PromptCard({
           </button>
           
           {showRatings && (
-            <button
-              onClick={() => setShowRatingModal(true)}
-              className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg"
-              title={userRating ? 'Update rating' : 'Rate this prompt'}
-            >
-              <Star className={`w-4 h-4 ${userRating ? 'text-yellow-600 fill-current' : ''}`} />
-            </button>
+            <>
+              <button
+                onClick={() => setShowQuickRatingModal(true)}
+                className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                title="Quick rating"
+              >
+                <Star className={`w-4 h-4 ${userRating ? 'text-yellow-600 fill-current' : ''}`} />
+              </button>
+              
+              <button
+                onClick={() => setShowRatingModal(true)}
+                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                title="Detailed rating"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </button>
+            </>
           )}
+          
+          <button
+            onClick={() => setShowSuccessStoryModal(true)}
+            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
+            title="Share success story"
+          >
+            <ThumbsUp className="w-4 h-4" />
+          </button>
           
           {onSave && (
             <button
@@ -156,7 +200,7 @@ export default function PromptCard({
       {/* Rating Display */}
       {showRatings && stats && (
         <div className="mb-4">
-          <RatingDisplay stats={stats} />
+          <PromptRatingDisplay stats={stats} />
         </div>
       )}
 
@@ -242,7 +286,25 @@ export default function PromptCard({
         )}
       </div>
 
-      {/* Rating Modal */}
+      {/* Modals */}
+      <QuickRatingModal
+        isOpen={showQuickRatingModal}
+        onClose={() => setShowQuickRatingModal(false)}
+        promptId={prompt.id}
+        promptType={promptType}
+        promptTitle={prompt.title}
+        onSubmit={handleQuickRating}
+      />
+
+      <SuccessStoryModal
+        isOpen={showSuccessStoryModal}
+        onClose={() => setShowSuccessStoryModal(false)}
+        promptId={prompt.id}
+        promptType={promptType}
+        promptTitle={prompt.title}
+        onSubmit={handleSuccessStory}
+      />
+
       <RatingModal
         isOpen={showRatingModal}
         onClose={() => setShowRatingModal(false)}
