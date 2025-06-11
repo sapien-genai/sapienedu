@@ -5,6 +5,7 @@ import AIReadinessResults from './AIReadinessResults'
 import TimeTrackingExercise from './TimeTrackingExercise'
 import CompetitorAnalysisExercise from './CompetitorAnalysisExercise'
 import WeeklyAIHabitTracker from './WeeklyAIHabitTracker'
+import ROICalculator from './ROICalculator'
 import type { BookExercise } from '@/data/bookContent'
 
 interface ExerciseFormProps {
@@ -30,6 +31,7 @@ export default function ExerciseForm({
   const isTimeTracking = exercise.type === 'timeTracking' || exercise.type === 'tracking'
   const isCompetitorAnalysis = exercise.type === 'competitorAnalysis' || exercise.id.includes('competitor')
   const isHabitTracker = exercise.type === 'habits' || exercise.id.includes('habit')
+  const isROICalculator = exercise.type === 'roiCalculator' || exercise.id.includes('roi')
 
   useEffect(() => {
     if (initialData) {
@@ -99,6 +101,10 @@ export default function ExerciseForm({
     setFormData(data)
   }
 
+  const handleROICalculatorChange = (data: any) => {
+    setFormData(data)
+  }
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
 
@@ -132,7 +138,7 @@ export default function ExerciseForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!isTimeTracking && !isCompetitorAnalysis && !isHabitTracker && !validateForm()) {
+    if (!isTimeTracking && !isCompetitorAnalysis && !isHabitTracker && !isROICalculator && !validateForm()) {
       return
     }
 
@@ -415,6 +421,16 @@ export default function ExerciseForm({
       )
     }
 
+    // Special handling for ROI Calculator
+    if (isROICalculator) {
+      return (
+        <ROICalculator
+          initialData={formData}
+          onDataChange={handleROICalculatorChange}
+        />
+      )
+    }
+
     const fields: React.ReactNode[] = []
 
     Object.entries(exercise.fields).forEach(([key, fieldConfig]: [string, any]) => {
@@ -466,7 +482,7 @@ export default function ExerciseForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {renderFormFields()}
 
-      {!isTimeTracking && !isCompetitorAnalysis && !isHabitTracker && (
+      {!isTimeTracking && !isCompetitorAnalysis && !isHabitTracker && !isROICalculator && (
         <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
           <button
             type="submit"

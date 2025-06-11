@@ -368,5 +368,31 @@ export const BOOK_EXERCISES: BookExercise[] = [
       }
     },
     sort_order: 1
+  },
+
+  // Chapter 9 Exercises
+  {
+    id: "ch9-ex1",
+    chapter: 9,
+    exercise_number: 1,
+    title: "AI ROI Calculator",
+    description: "Calculate the return on investment for your AI tool implementations with detailed projections.",
+    type: "roiCalculator",
+    fields: {
+      calculator: {
+        timeMetrics: [
+          { id: "email_hours", label: "Hours on email/week", default: 10, aiReduction: 0.7 },
+          { id: "writing_hours", label: "Hours writing content/week", default: 8, aiReduction: 0.6 },
+          { id: "research_hours", label: "Hours researching/week", default: 6, aiReduction: 0.8 },
+          { id: "meeting_prep_hours", label: "Hours on meeting prep/notes", default: 5, aiReduction: 0.5 },
+          { id: "data_analysis_hours", label: "Hours analyzing data/week", default: 4, aiReduction: 0.7 }
+        ],
+        financialMetrics: [
+          { id: "hourly_value", label: "Your hourly rate/value", default: 75 },
+          { id: "ai_tool_cost", label: "Monthly AI tool budget", default: 100 }
+        ]
+      }
+    },
+    sort_order: 1
   }
 ]
