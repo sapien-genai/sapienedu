@@ -154,7 +154,7 @@ export default function PromptsPage() {
   }
 
   const getChapterTitle = (chapterNumber: number) => {
-    const chapter = chapters.chapters.find(c => c.number === chapterNumber)
+    const chapter = chapters.find(c => c.number === chapterNumber)
     return chapter ? chapter.title : `Chapter ${chapterNumber}`
   }
 
@@ -436,7 +436,7 @@ export default function PromptsPage() {
                       <div className="flex">
                         <div className="ml-3">
                           <p className="text-sm text-yellow-700">
-                            <strong>Pro Tip:</strong> {prompt.pro_tip}
+                            <strong>💡 Pro Tip:</strong> {prompt.pro_tip}
                           </p>
                         </div>
                       </div>
