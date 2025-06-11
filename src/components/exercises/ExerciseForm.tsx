@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Save, CheckCircle } from 'lucide-react'
 import { AI_READINESS_CATEGORIES, AIReadinessScoring } from '@/data/aiReadinessAssessment'
 import AIReadinessResults from './AIReadinessResults'
+import TimeTrackingExercise from './TimeTrackingExercise'
 import type { BookExercise } from '@/data/bookContent'
 
 interface ExerciseFormProps {
@@ -24,6 +25,7 @@ export default function ExerciseForm({
   const [showResults, setShowResults] = useState(false)
 
   const isAIReadinessAssessment = exercise.id === 'ch1-ex1' || exercise.type === 'assessment'
+  const isTimeTracking = exercise.type === 'timeTracking' || exercise.type === 'tracking'
 
   useEffect(() => {
     if (initialData) {
@@ -81,6 +83,10 @@ export default function ExerciseForm({
     }
   }
 
+  const handleTimeTrackingChange = (data: any) => {
+    setFormData(data)
+  }
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
 
@@ -114,7 +120,7 @@ export default function ExerciseForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
+    if (!isTimeTracking && !validateForm()) {
       return
     }
 
@@ -367,6 +373,16 @@ export default function ExerciseForm({
       return renderAIReadinessAssessment()
     }
 
+    // Special handling for Time Tracking
+    if (isTimeTracking) {
+      return (
+        <TimeTrackingExercise
+          initialData={formData}
+          onDataChange={handleTimeTrackingChange}
+        />
+      )
+    }
+
     const fields: React.ReactNode[] = []
 
     Object.entries(exercise.fields).forEach(([key, fieldConfig]: [string, any]) => {
@@ -418,25 +434,27 @@ export default function ExerciseForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {renderFormFields()}
 
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn-primary flex items-center"
-        >
-          {submitting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              {isUpdate ? 'Updating...' : 'Saving...'}
-            </>
-          ) : (
-            <>
-              {isUpdate ? <Save className="w-4 h-4 mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-              {isUpdate ? 'Update Response' : 'Complete Exercise'}
-            </>
-          )}
-        </button>
-      </div>
+      {!isTimeTracking && (
+        <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-primary flex items-center"
+          >
+            {submitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                {isUpdate ? 'Updating...' : 'Saving...'}
+              </>
+            ) : (
+              <>
+                {isUpdate ? <Save className="w-4 h-4 mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                {isUpdate ? 'Update Response' : 'Complete Exercise'}
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </form>
   )
 }
