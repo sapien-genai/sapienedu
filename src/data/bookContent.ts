@@ -310,22 +310,19 @@ export const BOOK_EXERCISES: BookExercise[] = [
     id: "ch3-ex1",
     chapter: 3,
     exercise_number: 1,
-    title: "Daily AI Habit Tracker",
-    description: "Track your daily AI tool usage to build consistent habits.",
-    type: "tracking",
+    title: "Weekly AI Habit Tracker",
+    description: "Track your daily AI tool usage to build consistent habits and earn achievements.",
+    type: "habits",
     fields: {
-      daily_tracking: [
-        {
-          id: "tools_used",
-          type: "checklist",
-          label: "AI tools used today"
-        },
-        {
-          id: "time_saved",
-          type: "number",
-          label: "Estimated time saved (minutes)"
+      habits: {
+        categories: ["morning", "productivity", "learning", "creative", "optimization"],
+        gamification: {
+          points: true,
+          streaks: true,
+          achievements: true,
+          leaderboard: true
         }
-      ]
+      }
     },
     sort_order: 1
   },
