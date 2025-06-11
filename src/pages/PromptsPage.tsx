@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, Plus, Star, Edit, Trash2, Search, Copy, Check, BookOpen, Filter, X } from 'lucide-react'
+import { MessageSquare, Plus, Search, Filter, X, BookOpen, BarChart3 } from 'lucide-react'
 import { getUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { useBookPrompts, useChapters } from '@/hooks/useBookContent'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Badge from '@/components/ui/Badge'
+import PromptCard from '@/components/prompts/PromptCard'
 import { toast } from 'sonner'
 
 interface Prompt {
@@ -19,18 +20,6 @@ interface Prompt {
   created_at: string
 }
 
-interface BookPrompt {
-  id: string
-  chapter: number
-  category: string
-  title: string
-  prompt: string
-  tags: string[]
-  pro_tip?: string
-  is_from_book: boolean
-  sort_order: number
-}
-
 export default function PromptsPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -41,8 +30,8 @@ export default function PromptsPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
-  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null)
   const [savedPrompts, setSavedPrompts] = useState<Set<string>>(new Set())
+  const [showRatings, setShowRatings] = useState(true)
   const navigate = useNavigate()
 
   const { chapters } = useChapters()
@@ -96,18 +85,7 @@ export default function PromptsPage() {
     }
   }
 
-  const copyToClipboard = async (text: string, promptId: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedPromptId(promptId)
-      toast.success('Prompt copied to clipboard!')
-      setTimeout(() => setCopiedPromptId(null), 2000)
-    } catch (error) {
-      toast.error('Failed to copy prompt')
-    }
-  }
-
-  const saveBookPromptToLibrary = async (bookPrompt: BookPrompt) => {
+  const saveBookPromptToLibrary = async (bookPrompt: any) => {
     if (!user) return
 
     try {
@@ -186,15 +164,6 @@ export default function PromptsPage() {
   const displayPrompts = filterSource === 'user' ? [] : bookPrompts
   const displayUserPrompts = filterSource === 'book' ? [] : filteredUserPrompts
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-      />
-    ))
-  }
-
   if (loading || bookPromptsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -230,13 +199,26 @@ export default function PromptsPage() {
               Discover book prompts and manage your personal collection
             </p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center mt-4 md:mt-0"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Prompt
-          </button>
+          <div className="flex items-center space-x-3 mt-4 md:mt-0">
+            <button
+              onClick={() => setShowRatings(!showRatings)}
+              className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
+                showRatings 
+                  ? 'bg-primary-100 text-primary-700' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              {showRatings ? 'Hide Ratings' : 'Show Ratings'}
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn-primary flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Prompt
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -360,89 +342,14 @@ export default function PromptsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {displayPrompts.map((prompt) => (
-                <div key={prompt.id} className="card group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-primary-100 text-primary-600 rounded-lg flex items-center justify-center mr-3">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{prompt.title}</h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="default" size="sm">{prompt.category}</Badge>
-                          <span className="text-xs text-gray-500">
-                            {getChapterTitle(prompt.chapter)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={() => copyToClipboard(prompt.prompt, prompt.id)}
-                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
-                        title="Copy prompt"
-                      >
-                        {copiedPromptId === prompt.id ? (
-                          <Check className="w-4 h-4 text-success-600" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => saveBookPromptToLibrary(prompt)}
-                        disabled={savedPrompts.has(prompt.title)}
-                        className={`p-2 rounded-lg ${
-                          savedPrompts.has(prompt.title)
-                            ? 'text-success-600 bg-success-50'
-                            : 'text-gray-400 hover:text-success-600 hover:bg-success-50'
-                        }`}
-                        title={savedPrompts.has(prompt.title) ? 'Already saved' : 'Save to library'}
-                      >
-                        {savedPrompts.has(prompt.title) ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Star className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-gray-700 line-clamp-4">
-                      {prompt.prompt}
-                    </p>
-                  </div>
-
-                  {prompt.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {prompt.tags.map((tag, index) => (
-                        <button
-                          key={index}
-                          onClick={() => toggleTag(tag)}
-                          className={`px-2 py-1 text-xs rounded-full transition-colors duration-200 ${
-                            selectedTags.includes(tag)
-                              ? 'bg-primary-100 text-primary-700'
-                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {prompt.pro_tip && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
-                      <div className="flex">
-                        <div className="ml-3">
-                          <p className="text-sm text-yellow-700">
-                            <strong>💡 Pro Tip:</strong> {prompt.pro_tip}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <PromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  promptType="book"
+                  onSave={saveBookPromptToLibrary}
+                  isSaved={savedPrompts.has(prompt.title)}
+                  showRatings={showRatings}
+                />
               ))}
             </div>
           </div>
@@ -461,70 +368,14 @@ export default function PromptsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {displayUserPrompts.map((prompt) => (
-                <div key={prompt.id} className="card group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-success-100 text-success-600 rounded-lg flex items-center justify-center mr-3">
-                        <MessageSquare className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{prompt.title}</h3>
-                        <Badge variant="success" size="sm">{prompt.category}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={() => copyToClipboard(prompt.prompt_text, prompt.id)}
-                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg"
-                      >
-                        {copiedPromptId === prompt.id ? (
-                          <Check className="w-4 h-4 text-success-600" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setEditingPrompt(prompt)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => deleteUserPrompt(prompt.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <div className="flex items-center mb-2">
-                      <div className="flex items-center mr-2">
-                        {renderStars(prompt.success_rating)}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {prompt.success_rating}/5
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-gray-700 line-clamp-3">
-                      {prompt.prompt_text}
-                    </p>
-                  </div>
-
-                  {prompt.notes && (
-                    <div className="text-sm text-gray-600 mb-3">
-                      <strong>Notes:</strong> {prompt.notes}
-                    </div>
-                  )}
-
-                  <div className="text-xs text-gray-500">
-                    Created {new Date(prompt.created_at).toLocaleDateString()}
-                  </div>
-                </div>
+                <PromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  promptType="user"
+                  onEdit={setEditingPrompt}
+                  onDelete={deleteUserPrompt}
+                  showRatings={showRatings}
+                />
               ))}
             </div>
           </div>
