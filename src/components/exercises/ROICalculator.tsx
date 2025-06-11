@@ -18,7 +18,12 @@ import {
   Percent,
   FileText,
   Image,
-  Presentation
+  Presentation,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
+  Printer,
+  Mail
 } from 'lucide-react'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import {
@@ -37,6 +42,8 @@ import {
 import Badge from '@/components/ui/Badge'
 import ProgressBar from '@/components/ui/ProgressBar'
 import { toast } from 'sonner'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 ChartJS.register(
   CategoryScale,
@@ -81,6 +88,8 @@ interface ROICalculations {
   netROIYearly: number
   breakEvenDays: number
   roiPercentage: number
+  fiveYearValue: number
+  paybackPeriod: number
 }
 
 interface Scenario {
@@ -153,6 +162,22 @@ const DEFAULT_FINANCIAL_METRICS: FinancialMetric[] = [
     min: 0,
     max: 1000,
     type: "currency"
+  },
+  {
+    id: "implementation_cost",
+    label: "One-time implementation cost",
+    value: 500,
+    min: 0,
+    max: 10000,
+    type: "currency"
+  },
+  {
+    id: "training_hours",
+    label: "Training hours required",
+    value: 10,
+    min: 0,
+    max: 100,
+    type: "number"
   }
 ]
 
@@ -162,7 +187,7 @@ const SCENARIOS: Scenario[] = [
   { name: 'Optimistic', multiplier: 1.3, color: '#10B981' }
 ]
 
-const TIMEFRAMES = ['3 months', '6 months', '1 year', '3 years']
+const TIMEFRAMES = ['3 months', '6 months', '1 year', '3 years', '5 years']
 
 interface ROICalculatorProps {
   initialData?: any
@@ -181,38 +206,88 @@ export default function ROICalculator({
   const [selectedTimeframe, setSelectedTimeframe] = useState('1 year')
   const [selectedScenario, setSelectedScenario] = useState('Expected')
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
+  const [comparisonView, setComparisonView] = useState<'chart' | 'table'>('chart')
+  const [reportRef, setReportRef] = useState<HTMLDivElement | null>(null)
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+
+  // Advanced settings
+  const [settings, setSettings] = useState({
+    workWeeksPerYear: 48,
+    workDaysPerWeek: 5,
+    productivityLoss: 10, // percentage during learning curve
+    learningCurveWeeks: 4,
+    annualValueIncrease: 5, // percentage increase in value year over year
+    discountRate: 3, // for NPV calculations
+  })
 
   useEffect(() => {
     if (initialData) {
-      setTimeMetrics(initialData.timeMetrics || DEFAULT_TIME_METRICS)
-      setFinancialMetrics(initialData.financialMetrics || DEFAULT_FINANCIAL_METRICS)
+      if (initialData.timeMetrics) setTimeMetrics(initialData.timeMetrics)
+      if (initialData.financialMetrics) setFinancialMetrics(initialData.financialMetrics)
+      if (initialData.settings) setSettings(initialData.settings)
     }
   }, [initialData])
 
   useEffect(() => {
-    onDataChange({ timeMetrics, financialMetrics })
-  }, [timeMetrics, financialMetrics, onDataChange])
+    onDataChange({ 
+      timeMetrics, 
+      financialMetrics,
+      settings,
+      calculations: calculations
+    })
+  }, [timeMetrics, financialMetrics, settings])
 
   const calculations = useMemo((): ROICalculations => {
     const hourlyValue = financialMetrics.find(m => m.id === 'hourly_value')?.value || 0
     const aiToolCost = financialMetrics.find(m => m.id === 'ai_tool_cost')?.value || 0
+    const implementationCost = financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0
+    const trainingHours = financialMetrics.find(m => m.id === 'training_hours')?.value || 0
 
     const hoursSavedWeekly = timeMetrics.reduce((sum, metric) => 
       sum + (metric.hours * metric.aiReduction), 0
     )
 
     const hoursSavedMonthly = hoursSavedWeekly * 4.33
-    const hoursSavedYearly = hoursSavedWeekly * 52
+    const hoursSavedYearly = hoursSavedWeekly * settings.workWeeksPerYear
 
     const dollarValueWeekly = hoursSavedWeekly * hourlyValue
     const dollarValueMonthly = dollarValueWeekly * 4.33
-    const dollarValueYearly = dollarValueWeekly * 52
+    const dollarValueYearly = dollarValueWeekly * settings.workWeeksPerYear
 
+    // Account for learning curve
+    const learningCurveLoss = (settings.productivityLoss / 100) * dollarValueWeekly * settings.learningCurveWeeks
+    const firstYearValue = dollarValueYearly - learningCurveLoss - (trainingHours * hourlyValue)
+
+    // Calculate 5-year value with annual increases
+    let fiveYearValue = firstYearValue
+    for (let year = 1; year < 5; year++) {
+      const yearlyValue = dollarValueYearly * Math.pow(1 + (settings.annualValueIncrease / 100), year)
+      const discountFactor = Math.pow(1 + (settings.discountRate / 100), year + 1)
+      fiveYearValue += yearlyValue / discountFactor
+    }
+
+    const totalFirstYearCost = (aiToolCost * 12) + implementationCost
     const netROIMonthly = dollarValueMonthly - aiToolCost
-    const netROIYearly = netROIMonthly * 12
+    const netROIYearly = firstYearValue - totalFirstYearCost
 
-    const breakEvenDays = aiToolCost > 0 ? aiToolCost / (dollarValueWeekly / 7) : 0
-    const roiPercentage = aiToolCost > 0 ? (netROIYearly / (aiToolCost * 12)) * 100 : 0
+    // Break-even calculation
+    const dailyValue = dollarValueWeekly / settings.workDaysPerWeek
+    const totalUpfrontCost = implementationCost + (trainingHours * hourlyValue)
+    const breakEvenDays = totalUpfrontCost > 0 
+      ? totalUpfrontCost / (dailyValue - (aiToolCost / 30))
+      : aiToolCost > 0 
+        ? aiToolCost / (dailyValue * 30)
+        : 0
+
+    // Payback period in months
+    const paybackPeriod = totalFirstYearCost > 0 
+      ? totalFirstYearCost / dollarValueMonthly
+      : 0
+
+    const roiPercentage = totalFirstYearCost > 0 
+      ? (netROIYearly / totalFirstYearCost) * 100 
+      : 0
 
     return {
       hoursSavedWeekly,
@@ -224,9 +299,11 @@ export default function ROICalculator({
       netROIMonthly,
       netROIYearly,
       breakEvenDays,
-      roiPercentage
+      roiPercentage,
+      fiveYearValue,
+      paybackPeriod
     }
-  }, [timeMetrics, financialMetrics])
+  }, [timeMetrics, financialMetrics, settings])
 
   const updateTimeMetric = (id: string, field: keyof TimeMetric, value: number) => {
     setTimeMetrics(prev => prev.map(metric => 
@@ -240,28 +317,74 @@ export default function ROICalculator({
     ))
   }
 
+  const addCustomTimeMetric = () => {
+    const newId = `custom_${Date.now()}`
+    const newMetric: TimeMetric = {
+      id: newId,
+      label: "Custom task",
+      hours: 5,
+      aiReduction: 0.5,
+      min: 0,
+      max: 40,
+      step: 0.5
+    }
+    setTimeMetrics(prev => [...prev, newMetric])
+  }
+
+  const removeTimeMetric = (id: string) => {
+    setTimeMetrics(prev => prev.filter(metric => metric.id !== id))
+  }
+
   const getProjectionData = (timeframe: string, scenario: string) => {
     const months = timeframe === '3 months' ? 3 : 
                   timeframe === '6 months' ? 6 : 
-                  timeframe === '1 year' ? 12 : 36
+                  timeframe === '1 year' ? 12 : 
+                  timeframe === '3 years' ? 36 : 60
 
     const scenarioMultiplier = SCENARIOS.find(s => s.name === scenario)?.multiplier || 1
     const monthlyValue = calculations.dollarValueMonthly * scenarioMultiplier
     const monthlyCost = financialMetrics.find(m => m.id === 'ai_tool_cost')?.value || 0
+    const implementationCost = financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0
+    const trainingHours = financialMetrics.find(m => m.id === 'training_hours')?.value || 0
+    const hourlyValue = financialMetrics.find(m => m.id === 'hourly_value')?.value || 0
+    const trainingCost = trainingHours * hourlyValue
 
     const data = []
     let cumulativeValue = 0
-    let cumulativeCost = 0
-
+    let cumulativeCost = implementationCost + trainingCost
+    
+    // Apply learning curve to first few months
+    const learningCurveMonths = Math.ceil(settings.learningCurveWeeks / 4)
+    
     for (let month = 1; month <= months; month++) {
-      cumulativeValue += monthlyValue
+      // Apply productivity loss during learning curve
+      let monthValue = monthlyValue
+      if (month <= learningCurveMonths) {
+        const learningFactor = 1 - (settings.productivityLoss / 100) * (learningCurveMonths - month + 1) / learningCurveMonths
+        monthValue = monthlyValue * learningFactor
+      }
+      
+      // Apply annual value increase for later years
+      if (month > 12) {
+        const yearNumber = Math.floor(month / 12)
+        const yearlyIncreaseFactor = Math.pow(1 + (settings.annualValueIncrease / 100), yearNumber)
+        monthValue = monthValue * yearlyIncreaseFactor
+      }
+      
+      // Apply discount rate for NPV
+      const discountFactor = Math.pow(1 + (settings.discountRate / 100) / 12, month)
+      const discountedValue = monthValue / discountFactor
+      
+      cumulativeValue += discountedValue
       cumulativeCost += monthlyCost
       
       data.push({
         month,
         value: cumulativeValue,
         cost: cumulativeCost,
-        net: cumulativeValue - cumulativeCost
+        net: cumulativeValue - cumulativeCost,
+        monthlyValue: discountedValue,
+        monthlyCost: monthlyCost
       })
     }
 
@@ -302,6 +425,36 @@ export default function ROICalculator({
     }
   }
 
+  const getScenarioComparisonChart = () => {
+    // Get data for all scenarios with the selected timeframe
+    const scenarioData = SCENARIOS.map(scenario => {
+      const projectionData = getProjectionData(selectedTimeframe, scenario.name)
+      const finalData = projectionData[projectionData.length - 1]
+      return {
+        name: scenario.name,
+        color: scenario.color,
+        net: finalData.net,
+        value: finalData.value,
+        cost: finalData.cost,
+        roi: (finalData.net / finalData.cost) * 100
+      }
+    })
+
+    return {
+      labels: scenarioData.map(s => s.name),
+      datasets: [
+        {
+          label: 'Net ROI',
+          data: scenarioData.map(s => s.net),
+          backgroundColor: scenarioData.map(s => s.color),
+          borderWidth: 1,
+          borderColor: scenarioData.map(s => s.color),
+          borderRadius: 4
+        }
+      ]
+    }
+  }
+
   const getComparisonChart = () => {
     const currentHours = timeMetrics.reduce((sum, metric) => sum + metric.hours, 0)
     const aiHours = timeMetrics.reduce((sum, metric) => sum + (metric.hours * (1 - metric.aiReduction)), 0)
@@ -337,7 +490,10 @@ export default function ROICalculator({
           '#10B981', 
           '#F59E0B',
           '#8B5CF6',
-          '#EF4444'
+          '#EF4444',
+          '#06B6D4',
+          '#F97316',
+          '#84CC16'
         ],
         borderWidth: 2,
         borderColor: '#ffffff'
@@ -376,16 +532,54 @@ export default function ROICalculator({
     ]
   }
 
-  const exportToPDF = () => {
+  const generatePDF = async () => {
+    if (!reportRef) return
+    
+    setIsGeneratingPDF(true)
+    try {
+      const canvas = await html2canvas(reportRef, {
+        scale: 2,
+        logging: false,
+        useCORS: true
+      })
+      
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+      
+      const imgWidth = 210
+      const imgHeight = canvas.height * imgWidth / canvas.width
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+      pdf.save(`ai-roi-report-${new Date().toISOString().split('T')[0]}.pdf`)
+      
+      toast.success('ROI report exported as PDF!')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast.error('Failed to generate PDF. Please try again.')
+    } finally {
+      setIsGeneratingPDF(false)
+    }
+  }
+
+  const exportToJSON = () => {
     const reportData = {
       calculations,
       timeMetrics,
       financialMetrics,
+      settings,
+      scenarios: {
+        conservative: getProjectionData('5 years', 'Conservative'),
+        expected: getProjectionData('5 years', 'Expected'),
+        optimistic: getProjectionData('5 years', 'Optimistic')
+      },
       equivalentValues: getEquivalentValues(),
       generatedAt: new Date().toISOString()
     }
 
-    // Simulate PDF generation
     const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -396,7 +590,7 @@ export default function ROICalculator({
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     
-    toast.success('ROI report exported successfully!')
+    toast.success('ROI data exported successfully!')
   }
 
   const shareResults = () => {
@@ -405,6 +599,7 @@ export default function ROICalculator({
 ⏰ Time Saved: ${Math.round(calculations.hoursSavedWeekly)}h/week
 📈 ROI: ${Math.round(calculations.roiPercentage)}%
 🎯 Break-even: ${Math.round(calculations.breakEvenDays)} days
+💵 5-Year Value: $${Math.round(calculations.fiveYearValue).toLocaleString()}
 
 #AIProductivity #ROI #Automation`
 
@@ -430,6 +625,23 @@ export default function ROICalculator({
 
   const formatHours = (hours: number) => {
     return `${Math.round(hours * 10) / 10}h`
+  }
+
+  const getRoiRating = () => {
+    if (calculations.roiPercentage > 300) return { text: 'Exceptional', color: '#10B981' }
+    if (calculations.roiPercentage > 200) return { text: 'Excellent', color: '#10B981' }
+    if (calculations.roiPercentage > 100) return { text: 'Good', color: '#3B82F6' }
+    if (calculations.roiPercentage > 50) return { text: 'Positive', color: '#F59E0B' }
+    if (calculations.roiPercentage > 0) return { text: 'Marginal', color: '#F59E0B' }
+    return { text: 'Negative', color: '#EF4444' }
+  }
+
+  const getBreakEvenRating = () => {
+    if (calculations.breakEvenDays < 7) return { text: 'Immediate', color: '#10B981' }
+    if (calculations.breakEvenDays < 30) return { text: 'Quick', color: '#10B981' }
+    if (calculations.breakEvenDays < 90) return { text: 'Good', color: '#3B82F6' }
+    if (calculations.breakEvenDays < 180) return { text: 'Moderate', color: '#F59E0B' }
+    return { text: 'Long-term', color: '#EF4444' }
   }
 
   return (
@@ -534,17 +746,43 @@ export default function ROICalculator({
         <div className="space-y-6">
           {/* Time Metrics */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Time Allocation & AI Impact</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Time Allocation & AI Impact</h3>
+              <button 
+                onClick={addCustomTimeMetric}
+                className="btn-secondary text-sm flex items-center"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Custom Task
+              </button>
+            </div>
             <div className="space-y-6">
-              {timeMetrics.map(metric => (
-                <div key={metric.id} className="space-y-3">
+              {timeMetrics.map((metric, index) => (
+                <div key={metric.id} className="space-y-3 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
                   <div className="flex items-center justify-between">
-                    <label className="font-medium text-gray-700">{metric.label}</label>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">AI saves</span>
-                      <Badge variant="success" size="sm">
-                        {Math.round(metric.aiReduction * 100)}%
-                      </Badge>
+                    <div className="flex items-center">
+                      <input
+                        type="text"
+                        value={metric.label}
+                        onChange={(e) => updateTimeMetric(metric.id, 'label', e.target.value as any)}
+                        className="font-medium text-gray-700 bg-transparent border-b border-dashed border-gray-300 focus:border-primary-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">AI saves</span>
+                        <Badge variant="success" size="sm">
+                          {Math.round(metric.aiReduction * 100)}%
+                        </Badge>
+                      </div>
+                      {index >= DEFAULT_TIME_METRICS.length && (
+                        <button
+                          onClick={() => removeTimeMetric(metric.id)}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -598,7 +836,7 @@ export default function ROICalculator({
                         <strong>Time saved:</strong> {formatHours(metric.hours * metric.aiReduction)}/week
                       </span>
                       <span className="text-blue-600">
-                        <strong>Value:</strong> {formatCurrency(metric.hours * metric.aiReduction * (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0))}
+                        <strong>Value:</strong> {formatCurrency(metric.hours * metric.aiReduction * (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0))}/week
                       </span>
                     </div>
                   </div>
@@ -609,7 +847,16 @@ export default function ROICalculator({
 
           {/* Financial Metrics */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Financial Parameters</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Financial Parameters</h3>
+              <button
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className="btn-secondary text-sm flex items-center"
+              >
+                <Sliders className="w-4 h-4 mr-2" />
+                {showAdvancedSettings ? 'Hide' : 'Show'} Advanced Settings
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {financialMetrics.map(metric => (
                 <div key={metric.id} className="space-y-3">
@@ -640,12 +887,99 @@ export default function ROICalculator({
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-gray-500">
-                    <span>{formatCurrency(metric.min)}</span>
-                    <span>{formatCurrency(metric.max)}</span>
+                    <span>{metric.type === 'currency' ? formatCurrency(metric.min) : metric.min}</span>
+                    <span>{metric.type === 'currency' ? formatCurrency(metric.max) : metric.max}</span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Advanced Settings */}
+            {showAdvancedSettings && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h4 className="font-medium text-gray-900 mb-4">Advanced Settings</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Work weeks per year
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.workWeeksPerYear}
+                      onChange={(e) => setSettings(prev => ({ ...prev, workWeeksPerYear: Number(e.target.value) }))}
+                      className="input-field"
+                      min={1}
+                      max={52}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Work days per week
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.workDaysPerWeek}
+                      onChange={(e) => setSettings(prev => ({ ...prev, workDaysPerWeek: Number(e.target.value) }))}
+                      className="input-field"
+                      min={1}
+                      max={7}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Learning curve (weeks)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.learningCurveWeeks}
+                      onChange={(e) => setSettings(prev => ({ ...prev, learningCurveWeeks: Number(e.target.value) }))}
+                      className="input-field"
+                      min={0}
+                      max={26}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Productivity loss during learning (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.productivityLoss}
+                      onChange={(e) => setSettings(prev => ({ ...prev, productivityLoss: Number(e.target.value) }))}
+                      className="input-field"
+                      min={0}
+                      max={100}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Annual value increase (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.annualValueIncrease}
+                      onChange={(e) => setSettings(prev => ({ ...prev, annualValueIncrease: Number(e.target.value) }))}
+                      className="input-field"
+                      min={0}
+                      max={50}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Discount rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.discountRate}
+                      onChange={(e) => setSettings(prev => ({ ...prev, discountRate: Number(e.target.value) }))}
+                      className="input-field"
+                      min={0}
+                      max={20}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Impact Dashboard */}
@@ -671,15 +1005,15 @@ export default function ROICalculator({
                   label: 'ROI Percentage',
                   value: `${Math.round(calculations.roiPercentage)}%`,
                   icon: TrendingUp,
-                  equivalent: `vs ${Math.round(Math.random() * 5 + 8)}% S&P 500 avg`,
+                  equivalent: `${getRoiRating().text} return`,
                   color: 'text-purple-600'
                 },
                 {
                   label: 'Break-even Time',
                   value: `${Math.round(calculations.breakEvenDays)} days`,
                   icon: Target,
-                  equivalent: calculations.breakEvenDays < 7 ? 'Excellent' : calculations.breakEvenDays < 30 ? 'Good' : 'Consider',
-                  color: calculations.breakEvenDays < 7 ? 'text-green-600' : calculations.breakEvenDays < 30 ? 'text-yellow-600' : 'text-red-600'
+                  equivalent: getBreakEvenRating().text,
+                  color: getBreakEvenRating().color
                 }
               ].map((metric, index) => {
                 const Icon = metric.icon
@@ -749,8 +1083,9 @@ export default function ROICalculator({
               </div>
               <button
                 onClick={() => setShowBreakdown(!showBreakdown)}
-                className="btn-secondary text-sm"
+                className="btn-secondary text-sm flex items-center"
               >
+                {showBreakdown ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
                 {showBreakdown ? 'Hide' : 'Show'} Breakdown
               </button>
             </div>
@@ -799,48 +1134,108 @@ export default function ROICalculator({
 
           {/* Scenario Comparison */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Scenario Analysis</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {SCENARIOS.map(scenario => {
-                const projectionData = getProjectionData(selectedTimeframe, scenario.name)
-                const finalValue = projectionData[projectionData.length - 1]
-                
-                return (
-                  <div
-                    key={scenario.name}
-                    className={`p-4 rounded-lg border-2 ${
-                      selectedScenario === scenario.name 
-                        ? 'border-primary-300 bg-primary-50' 
-                        : 'border-gray-200 bg-gray-50'
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Scenario Analysis</h3>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">View:</span>
+                <div className="flex rounded-lg overflow-hidden border border-gray-300">
+                  <button
+                    onClick={() => setComparisonView('chart')}
+                    className={`px-3 py-1 text-sm ${
+                      comparisonView === 'chart'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <div className="text-center">
-                      <h4 className="font-semibold text-gray-900 mb-2">{scenario.name}</h4>
-                      <div className="text-2xl font-bold mb-1" style={{ color: scenario.color }}>
-                        {formatCurrency(finalValue.net)}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-3">Net ROI ({selectedTimeframe})</div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Value:</span>
-                          <span className="font-medium">{formatCurrency(finalValue.value)}</span>
+                    Chart
+                  </button>
+                  <button
+                    onClick={() => setComparisonView('table')}
+                    className={`px-3 py-1 text-sm ${
+                      comparisonView === 'table'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Table
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {comparisonView === 'chart' ? (
+              <div className="h-80">
+                <Bar
+                  data={getScenarioComparisonChart()}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => {
+                            return `Net ROI: ${formatCurrency(context.parsed.y)}`
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          callback: (value) => formatCurrency(Number(value))
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {SCENARIOS.map(scenario => {
+                  const projectionData = getProjectionData(selectedTimeframe, scenario.name)
+                  const finalValue = projectionData[projectionData.length - 1]
+                  
+                  return (
+                    <div
+                      key={scenario.name}
+                      className={`p-4 rounded-lg border-2 ${
+                        selectedScenario === scenario.name 
+                          ? 'border-primary-300 bg-primary-50' 
+                          : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <h4 className="font-semibold text-gray-900 mb-2">{scenario.name}</h4>
+                        <div className="text-2xl font-bold mb-1" style={{ color: scenario.color }}>
+                          {formatCurrency(finalValue.net)}
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Cost:</span>
-                          <span className="font-medium">{formatCurrency(finalValue.cost)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">ROI:</span>
-                          <span className="font-medium">
-                            {Math.round((finalValue.net / finalValue.cost) * 100)}%
-                          </span>
+                        <div className="text-sm text-gray-600 mb-3">Net ROI ({selectedTimeframe})</div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Value:</span>
+                            <span className="font-medium">{formatCurrency(finalValue.value)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Cost:</span>
+                            <span className="font-medium">{formatCurrency(finalValue.cost)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">ROI:</span>
+                            <span className="font-medium">
+                              {Math.round((finalValue.net / finalValue.cost) * 100)}%
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* Detailed Breakdown */}
@@ -860,31 +1255,75 @@ export default function ROICalculator({
                     </tr>
                   </thead>
                   <tbody>
-                    {getProjectionData(selectedTimeframe, selectedScenario).slice(0, 12).map(data => (
-                      <tr key={data.month} className="border-b border-gray-100">
-                        <td className="p-3 text-gray-900">Month {data.month}</td>
-                        <td className="p-3 text-right text-gray-900">
-                          {formatHours(calculations.hoursSavedMonthly)}
-                        </td>
-                        <td className="p-3 text-right text-green-600 font-medium">
-                          {formatCurrency(data.value / data.month)}
-                        </td>
-                        <td className="p-3 text-right text-red-600">
-                          {formatCurrency(data.cost / data.month)}
-                        </td>
-                        <td className="p-3 text-right font-medium">
-                          {formatCurrency((data.value - data.cost) / data.month)}
-                        </td>
-                        <td className="p-3 text-right font-bold">
-                          {formatCurrency(data.net)}
-                        </td>
-                      </tr>
-                    ))}
+                    {getProjectionData(selectedTimeframe, selectedScenario).map((data, index) => {
+                      // Only show every 3rd month after the first year to avoid too many rows
+                      if (data.month > 12 && data.month % 3 !== 0 && data.month !== parseInt(selectedTimeframe)) {
+                        return null
+                      }
+                      
+                      return (
+                        <tr key={data.month} className="border-b border-gray-100">
+                          <td className="p-3 text-gray-900">Month {data.month}</td>
+                          <td className="p-3 text-right text-gray-900">
+                            {formatHours(calculations.hoursSavedMonthly)}
+                          </td>
+                          <td className="p-3 text-right text-green-600 font-medium">
+                            {formatCurrency(data.monthlyValue)}
+                          </td>
+                          <td className="p-3 text-right text-red-600">
+                            {formatCurrency(data.monthlyCost)}
+                          </td>
+                          <td className="p-3 text-right font-medium">
+                            {formatCurrency(data.monthlyValue - data.monthlyCost)}
+                          </td>
+                          <td className="p-3 text-right font-bold">
+                            {formatCurrency(data.net)}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
+
+          {/* Key Metrics */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Key Financial Metrics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-700 mb-1">Payback Period</div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {calculations.paybackPeriod < 1 
+                    ? `${Math.round(calculations.paybackPeriod * 30)} days` 
+                    : `${Math.round(calculations.paybackPeriod * 10) / 10} months`}
+                </div>
+                <div className="text-xs text-gray-500">Time to recoup investment</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-700 mb-1">5-Year Value</div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {formatCurrency(calculations.fiveYearValue)}
+                </div>
+                <div className="text-xs text-gray-500">Net present value (NPV)</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-700 mb-1">First Year ROI</div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {Math.round(calculations.roiPercentage)}%
+                </div>
+                <div className="text-xs text-gray-500">Return on investment</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-700 mb-1">Monthly Net Benefit</div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {formatCurrency(calculations.netROIMonthly)}
+                </div>
+                <div className="text-xs text-gray-500">After AI tool costs</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -976,6 +1415,20 @@ export default function ROICalculator({
                   </div>
                 </div>
 
+                <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+                  <div>
+                    <div className="font-medium text-yellow-800">Implementation Costs</div>
+                    <div className="text-sm text-yellow-600">One-time costs + training</div>
+                  </div>
+                  <div className="text-xl font-bold text-yellow-600">
+                    {formatCurrency(
+                      (financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0) +
+                      (financialMetrics.find(m => m.id === 'training_hours')?.value || 0) *
+                      (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0)
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                   <div>
                     <div className="font-medium text-blue-800">Net Annual ROI</div>
@@ -993,6 +1446,92 @@ export default function ROICalculator({
                   <div className="text-sm text-gray-600">Return on Investment</div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Scenario Comparison Table */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Scenario Comparison</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left p-3 font-medium text-gray-900">Metric</th>
+                    {SCENARIOS.map(scenario => (
+                      <th 
+                        key={scenario.name} 
+                        className="text-right p-3 font-medium text-gray-900"
+                        style={{ color: scenario.color }}
+                      >
+                        {scenario.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: 'Annual Value', getValue: (s: string) => {
+                      const multiplier = SCENARIOS.find(sc => sc.name === s)?.multiplier || 1
+                      return calculations.dollarValueYearly * multiplier
+                    }},
+                    { label: 'Annual Costs', getValue: (s: string) => {
+                      const aiToolCost = (financialMetrics.find(m => m.id === 'ai_tool_cost')?.value || 0) * 12
+                      const implementationCost = (financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0)
+                      const trainingCost = (financialMetrics.find(m => m.id === 'training_hours')?.value || 0) * 
+                                          (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0)
+                      return aiToolCost + (implementationCost + trainingCost) / 3 // Amortize implementation over 3 years
+                    }},
+                    { label: 'Net Annual ROI', getValue: (s: string) => {
+                      const multiplier = SCENARIOS.find(sc => sc.name === s)?.multiplier || 1
+                      const value = calculations.dollarValueYearly * multiplier
+                      const aiToolCost = (financialMetrics.find(m => m.id === 'ai_tool_cost')?.value || 0) * 12
+                      const implementationCost = (financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0)
+                      const trainingCost = (financialMetrics.find(m => m.id === 'training_hours')?.value || 0) * 
+                                          (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0)
+                      const costs = aiToolCost + (implementationCost + trainingCost) / 3
+                      return value - costs
+                    }},
+                    { label: 'ROI Percentage', getValue: (s: string) => {
+                      const multiplier = SCENARIOS.find(sc => sc.name === s)?.multiplier || 1
+                      const value = calculations.dollarValueYearly * multiplier
+                      const aiToolCost = (financialMetrics.find(m => m.id === 'ai_tool_cost')?.value || 0) * 12
+                      const implementationCost = (financialMetrics.find(m => m.id === 'implementation_cost')?.value || 0)
+                      const trainingCost = (financialMetrics.find(m => m.id === 'training_hours')?.value || 0) * 
+                                          (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0)
+                      const costs = aiToolCost + (implementationCost + trainingCost) / 3
+                      return costs > 0 ? ((value - costs) / costs) * 100 : 0
+                    }},
+                    { label: 'Break-even (days)', getValue: (s: string) => {
+                      const multiplier = SCENARIOS.find(sc => sc.name === s)?.multiplier || 1
+                      return calculations.breakEvenDays / multiplier
+                    }},
+                    { label: '5-Year Value', getValue: (s: string) => {
+                      const multiplier = SCENARIOS.find(sc => sc.name === s)?.multiplier || 1
+                      return calculations.fiveYearValue * multiplier
+                    }}
+                  ].map((row, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="p-3 font-medium text-gray-900">{row.label}</td>
+                      {SCENARIOS.map(scenario => {
+                        const value = row.getValue(scenario.name)
+                        return (
+                          <td 
+                            key={scenario.name} 
+                            className="p-3 text-right font-medium"
+                            style={{ color: scenario.color }}
+                          >
+                            {row.label.includes('Percentage') 
+                              ? `${Math.round(value)}%` 
+                              : row.label.includes('days')
+                                ? `${Math.round(value)} days`
+                                : formatCurrency(value)}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1023,6 +1562,155 @@ export default function ROICalculator({
       {/* Sharing Tab */}
       {activeTab === 'sharing' && (
         <div className="space-y-6">
+          {/* Report Preview */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Report Preview</h3>
+            <div 
+              ref={setReportRef}
+              className="border border-gray-200 rounded-lg p-6 bg-white"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">AI ROI Analysis Report</h2>
+                <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Annual Value:</span>
+                      <span className="font-medium">{formatCurrency(calculations.dollarValueYearly)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Weekly Time Saved:</span>
+                      <span className="font-medium">{formatHours(calculations.hoursSavedWeekly)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">ROI Percentage:</span>
+                      <span className="font-medium">{Math.round(calculations.roiPercentage)}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Break-even:</span>
+                      <span className="font-medium">{Math.round(calculations.breakEvenDays)} days</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">5-Year Value:</span>
+                      <span className="font-medium">{formatCurrency(calculations.fiveYearValue)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">Recommendation</h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center">
+                      {calculations.roiPercentage > 100 ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-yellow-600 mr-2" />
+                      )}
+                      <span className="text-gray-700">
+                        {calculations.roiPercentage > 200 
+                          ? 'Strongly recommended implementation'
+                          : calculations.roiPercentage > 100
+                            ? 'Recommended implementation'
+                            : calculations.roiPercentage > 50
+                              ? 'Consider implementation'
+                              : 'Review strategy before implementation'}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Target className="w-4 h-4 text-blue-600 mr-2" />
+                      <span className="text-gray-700">
+                        Focus first on {timeMetrics.sort((a, b) => 
+                          (b.hours * b.aiReduction * (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0)) - 
+                          (a.hours * a.aiReduction * (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0))
+                        )[0]?.label.replace('/week', '')}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 text-purple-600 mr-2" />
+                      <span className="text-gray-700">
+                        Expected payback period: {calculations.paybackPeriod < 1 
+                          ? `${Math.round(calculations.paybackPeriod * 30)} days` 
+                          : `${Math.round(calculations.paybackPeriod * 10) / 10} months`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Time Savings by Task</h4>
+                <div className="space-y-3">
+                  {timeMetrics.map(metric => (
+                    <div key={metric.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{metric.label}</div>
+                        <div className="text-sm text-gray-600">
+                          {metric.hours}h/week × {Math.round(metric.aiReduction * 100)}% reduction
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium text-gray-900">
+                          {formatHours(metric.hours * metric.aiReduction)}/week
+                        </div>
+                        <div className="text-sm text-green-600">
+                          {formatCurrency(metric.hours * metric.aiReduction * (financialMetrics.find(m => m.id === 'hourly_value')?.value || 0))}/week
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Scenario Comparison</h4>
+                  <div className="space-y-2">
+                    {SCENARIOS.map(scenario => {
+                      const projectionData = getProjectionData('1 year', scenario.name)
+                      const finalValue = projectionData[projectionData.length - 1]
+                      
+                      return (
+                        <div 
+                          key={scenario.name} 
+                          className="flex items-center justify-between p-3 rounded-lg"
+                          style={{ backgroundColor: `${scenario.color}10` }}
+                        >
+                          <span className="font-medium" style={{ color: scenario.color }}>
+                            {scenario.name}
+                          </span>
+                          <span className="font-bold" style={{ color: scenario.color }}>
+                            {formatCurrency(finalValue.net)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">What This Could Buy</h4>
+                  <div className="space-y-2 text-sm">
+                    {getEquivalentValues().map((item, index) => (
+                      <div key={index} className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-700">{item.label}</span>
+                        <span className="font-medium text-gray-900">{item.value} {item.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center text-sm text-gray-500">
+                <p>This report was generated using the AI ROI Calculator.</p>
+                <p>All calculations are estimates based on the provided inputs.</p>
+              </div>
+            </div>
+          </div>
+
           {/* Export Options */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Export Your Analysis</h3>
@@ -1033,9 +1721,22 @@ export default function ROICalculator({
                 <p className="text-sm text-gray-600 mb-4">
                   Comprehensive report with all calculations and charts
                 </p>
-                <button onClick={exportToPDF} className="btn-primary w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
+                <button 
+                  onClick={generatePDF} 
+                  disabled={isGeneratingPDF}
+                  className="btn-primary w-full flex items-center justify-center"
+                >
+                  {isGeneratingPDF ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -1045,21 +1746,21 @@ export default function ROICalculator({
                 <p className="text-sm text-gray-600 mb-4">
                   Shareable image for LinkedIn, Twitter, etc.
                 </p>
-                <button className="btn-secondary w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Generate Image
+                <button onClick={shareResults} className="btn-primary w-full flex items-center justify-center">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share Results
                 </button>
               </div>
 
               <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-300 transition-colors">
                 <Presentation className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <h4 className="font-medium text-gray-900 mb-2">Presentation</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Raw Data</h4>
                 <p className="text-sm text-gray-600 mb-4">
-                  PowerPoint slides for stakeholder presentations
+                  Export all data in JSON format for further analysis
                 </p>
-                <button className="btn-secondary w-full">
+                <button onClick={exportToJSON} className="btn-primary w-full flex items-center justify-center">
                   <Download className="w-4 h-4 mr-2" />
-                  Create Slides
+                  Export Data
                 </button>
               </div>
             </div>
@@ -1076,11 +1777,12 @@ export default function ROICalculator({
 ⏰ Time Saved: ${formatHours(calculations.hoursSavedWeekly)}/week
 📈 ROI: ${Math.round(calculations.roiPercentage)}%
 🎯 Break-even: ${Math.round(calculations.breakEvenDays)} days
+💵 5-Year Value: ${formatCurrency(calculations.fiveYearValue)}
 
 #AIProductivity #ROI #Automation`}
               </div>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-3">
               <button onClick={shareResults} className="btn-primary flex items-center">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share Results
@@ -1092,45 +1794,34 @@ export default function ROICalculator({
 ⏰ Time Saved: ${formatHours(calculations.hoursSavedWeekly)}/week
 📈 ROI: ${Math.round(calculations.roiPercentage)}%
 🎯 Break-even: ${Math.round(calculations.breakEvenDays)} days
+💵 5-Year Value: ${formatCurrency(calculations.fiveYearValue)}
 
 #AIProductivity #ROI #Automation`)
                   toast.success('Copied to clipboard!')
                 }}
-                className="btn-secondary"
+                className="btn-secondary flex items-center"
               >
+                <Copy className="w-4 h-4 mr-2" />
                 Copy Text
               </button>
-            </div>
-          </div>
-
-          {/* Privacy Settings */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Privacy & Benchmarking</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                <div>
-                  <div className="font-medium text-blue-800">Contribute to Industry Benchmarks</div>
-                  <div className="text-sm text-blue-600">
-                    Help improve ROI calculations for everyone (anonymous data only)
-                  </div>
-                </div>
-                <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span className="ml-2 text-sm text-blue-700">Opt in</span>
-                </label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="btn-secondary text-sm">
-                  Anonymous Sharing
-                </button>
-                <button className="btn-secondary text-sm">
-                  Industry Only
-                </button>
-                <button className="btn-secondary text-sm">
-                  Public Results
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  window.print()
+                }}
+                className="btn-secondary flex items-center"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Report
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = `mailto:?subject=AI ROI Analysis&body=🤖 My AI ROI Analysis:%0A%0A💰 Annual Value: ${formatCurrency(calculations.dollarValueYearly)}%0A⏰ Time Saved: ${formatHours(calculations.hoursSavedWeekly)}/week%0A📈 ROI: ${Math.round(calculations.roiPercentage)}%%0A🎯 Break-even: ${Math.round(calculations.breakEvenDays)} days%0A💵 5-Year Value: ${formatCurrency(calculations.fiveYearValue)}%0A%0A#AIProductivity #ROI #Automation`
+                }}
+                className="btn-secondary flex items-center"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Email Report
+              </button>
             </div>
           </div>
         </div>
