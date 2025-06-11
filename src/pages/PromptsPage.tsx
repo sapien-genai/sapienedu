@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, Plus, Star, Edit, Trash2, Search, Copy, Check, BookOpen, Filter } from 'lucide-react'
+import { MessageSquare, Plus, Star, Edit, Trash2, Search, Copy, Check, BookOpen, Filter, X } from 'lucide-react'
 import { getUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { useBookPrompts, useChapters } from '@/hooks/useBookContent'
@@ -38,18 +38,23 @@ export default function PromptsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterSource, setFilterSource] = useState('all') // 'all', 'book', 'user'
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null)
+  const [savedPrompts, setSavedPrompts] = useState<Set<string>>(new Set())
   const navigate = useNavigate()
 
   const { chapters } = useChapters()
-  const { prompts: bookPrompts, loading: bookPromptsLoading } = useBookPrompts({
+  const { prompts: bookPrompts, loading: bookPromptsLoading, error: bookPromptsError } = useBookPrompts({
     search: searchTerm,
-    category: filterCategory !== 'all' ? filterCategory : undefined
+    category: filterCategory !== 'all' ? filterCategory : undefined,
+    tags: selectedTags.length > 0 ? selectedTags : undefined
   })
 
-  const categories = ['Writing', 'Analysis', 'Creative', 'Technical', 'Communication', 'Getting Started', 'Goal Setting', 'Prompt Engineering', 'Habit Formation', 'Content Creation', 'Data Analysis', 'Automation', 'Tool Selection', 'Workflow Integration', 'ROI Tracking', 'Advanced Techniques', 'Team Collaboration', 'Future Planning', 'Other']
+  // Get unique categories and tags from book prompts
+  const allCategories = Array.from(new Set(bookPrompts.map(p => p.category))).sort()
+  const allTags = Array.from(new Set(bookPrompts.flatMap(p => p.tags))).sort()
 
   useEffect(() => {
     checkAuthAndLoadData()
@@ -82,6 +87,10 @@ export default function PromptsPage() {
         .order('created_at', { ascending: false })
 
       setUserPrompts(prompts || [])
+      
+      // Track which book prompts have been saved
+      const savedBookPromptTitles = new Set(prompts?.map(p => p.title) || [])
+      setSavedPrompts(savedBookPromptTitles)
     } catch (error) {
       console.error('Error loading user prompts:', error)
     }
@@ -116,6 +125,7 @@ export default function PromptsPage() {
       if (error) throw error
 
       toast.success('Prompt saved to your library!')
+      setSavedPrompts(prev => new Set([...prev, bookPrompt.title]))
       await loadUserPrompts(user.id)
     } catch (error) {
       console.error('Error saving prompt:', error)
@@ -123,9 +133,44 @@ export default function PromptsPage() {
     }
   }
 
+  const deleteUserPrompt = async (promptId: string) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('prompts')
+        .delete()
+        .eq('id', promptId)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      toast.success('Prompt deleted successfully!')
+      await loadUserPrompts(user.id)
+    } catch (error) {
+      console.error('Error deleting prompt:', error)
+      toast.error('Failed to delete prompt')
+    }
+  }
+
   const getChapterTitle = (chapterNumber: number) => {
     const chapter = chapters.chapters.find(c => c.number === chapterNumber)
     return chapter ? chapter.title : `Chapter ${chapterNumber}`
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    )
+  }
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setFilterCategory('all')
+    setFilterSource('all')
+    setSelectedTags([])
   }
 
   const filteredUserPrompts = userPrompts.filter(prompt => {
@@ -138,12 +183,7 @@ export default function PromptsPage() {
     return matchesSearch && matchesCategory
   })
 
-  const filteredBookPrompts = bookPrompts.filter(prompt => {
-    const matchesCategory = filterCategory === 'all' || prompt.category === filterCategory
-    return matchesCategory
-  })
-
-  const displayPrompts = filterSource === 'user' ? [] : filteredBookPrompts
+  const displayPrompts = filterSource === 'user' ? [] : bookPrompts
   const displayUserPrompts = filterSource === 'book' ? [] : filteredUserPrompts
 
   const renderStars = (rating: number) => {
@@ -162,6 +202,22 @@ export default function PromptsPage() {
       </div>
     )
   }
+
+  if (bookPromptsError) {
+    return (
+      <DashboardLayout user={user}>
+        <div className="text-center py-12">
+          <div className="text-red-600 mb-4">Error loading book prompts: {bookPromptsError}</div>
+          <button onClick={() => window.location.reload()} className="btn-primary">
+            Retry
+          </button>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const totalPrompts = bookPrompts.length + userPrompts.length
+  const hasActiveFilters = searchTerm || filterCategory !== 'all' || filterSource !== 'all' || selectedTags.length > 0
 
   return (
     <DashboardLayout user={user}>
@@ -194,66 +250,105 @@ export default function PromptsPage() {
             <div className="text-sm text-gray-600">Your Prompts</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-yellow-600 mb-1">
-              {new Set([...bookPrompts.map(p => p.category), ...userPrompts.map(p => p.category)]).size}
-            </div>
+            <div className="text-2xl font-bold text-yellow-600 mb-1">{allCategories.length}</div>
             <div className="text-sm text-gray-600">Categories</div>
           </div>
           <div className="card text-center">
-            <div className="text-2xl font-bold text-purple-600 mb-1">
-              {bookPrompts.reduce((acc, p) => acc + p.tags.length, 0)}
-            </div>
-            <div className="text-sm text-gray-600">Total Tags</div>
+            <div className="text-2xl font-bold text-purple-600 mb-1">{allTags.length}</div>
+            <div className="text-sm text-gray-600">Available Tags</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="card">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search prompts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input-field pl-10"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search prompts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input-field pl-10"
-                />
+              </div>
+              <div className="lg:w-48">
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="all">All Categories</option>
+                  {allCategories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="lg:w-48">
+                <select
+                  value={filterSource}
+                  onChange={(e) => setFilterSource(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="book">Book Prompts</option>
+                  <option value="user">My Prompts</option>
+                </select>
               </div>
             </div>
-            <div className="lg:w-48">
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="input-field"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="lg:w-48">
-              <select
-                value={filterSource}
-                onChange={(e) => setFilterSource(e.target.value)}
-                className="input-field"
-              >
-                <option value="all">All Sources</option>
-                <option value="book">Book Prompts</option>
-                <option value="user">My Prompts</option>
-              </select>
-            </div>
+
+            {/* Tag Filters */}
+            {allTags.length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Filter by tags:</div>
+                <div className="flex flex-wrap gap-2">
+                  {allTags.slice(0, 12).map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1 text-sm rounded-full transition-colors duration-200 ${
+                        selectedTags.includes(tag)
+                          ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Active Filters */}
+            {hasActiveFilters && (
+              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">
+                    {displayPrompts.length + displayUserPrompts.length} of {totalPrompts} prompts
+                  </span>
+                </div>
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-primary-600 hover:text-primary-500 flex items-center"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear filters
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Book Prompts Section */}
-        {filterSource !== 'user' && (
+        {filterSource !== 'user' && displayPrompts.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center">
               <BookOpen className="w-5 h-5 text-primary-600 mr-2" />
@@ -295,10 +390,19 @@ export default function PromptsPage() {
                       </button>
                       <button
                         onClick={() => saveBookPromptToLibrary(prompt)}
-                        className="p-2 text-gray-400 hover:text-success-600 hover:bg-success-50 rounded-lg"
-                        title="Save to library"
+                        disabled={savedPrompts.has(prompt.title)}
+                        className={`p-2 rounded-lg ${
+                          savedPrompts.has(prompt.title)
+                            ? 'text-success-600 bg-success-50'
+                            : 'text-gray-400 hover:text-success-600 hover:bg-success-50'
+                        }`}
+                        title={savedPrompts.has(prompt.title) ? 'Already saved' : 'Save to library'}
                       >
-                        <Plus className="w-4 h-4" />
+                        {savedPrompts.has(prompt.title) ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Star className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -312,12 +416,17 @@ export default function PromptsPage() {
                   {prompt.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {prompt.tags.map((tag, index) => (
-                        <span
+                        <button
                           key={index}
-                          className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full"
+                          onClick={() => toggleTag(tag)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors duration-200 ${
+                            selectedTags.includes(tag)
+                              ? 'bg-primary-100 text-primary-700'
+                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          }`}
                         >
                           {tag}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -340,7 +449,7 @@ export default function PromptsPage() {
         )}
 
         {/* User Prompts Section */}
-        {filterSource !== 'book' && userPrompts.length > 0 && (
+        {filterSource !== 'book' && displayUserPrompts.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center">
               <MessageSquare className="w-5 h-5 text-success-600 mr-2" />
@@ -380,7 +489,10 @@ export default function PromptsPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                      <button 
+                        onClick={() => deleteUserPrompt(prompt.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -404,12 +516,12 @@ export default function PromptsPage() {
                   </div>
 
                   {prompt.notes && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 mb-3">
                       <strong>Notes:</strong> {prompt.notes}
                     </div>
                   )}
 
-                  <div className="text-xs text-gray-500 mt-4">
+                  <div className="text-xs text-gray-500">
                     Created {new Date(prompt.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -424,15 +536,16 @@ export default function PromptsPage() {
             <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No prompts found</h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm || filterCategory !== 'all'
+              {hasActiveFilters
                 ? 'Try adjusting your search or filter criteria.'
                 : 'Start by exploring book prompts or adding your own.'}
             </p>
-            {userPrompts.length === 0 && filterSource !== 'book' && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="btn-primary"
-              >
+            {hasActiveFilters ? (
+              <button onClick={clearFilters} className="btn-secondary">
+                Clear Filters
+              </button>
+            ) : (
+              <button onClick={() => setShowAddModal(true)} className="btn-primary">
                 Add Your First Prompt
               </button>
             )}
