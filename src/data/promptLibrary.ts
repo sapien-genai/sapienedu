@@ -10,1139 +10,249 @@ export interface PromptTemplate {
   rating: number
   times_used: number
   is_featured: boolean
-  created_at: string
   author: string
+  created_at: string
 }
 
 export const PROMPT_LIBRARY: PromptTemplate[] = [
   {
-    "id": "prod_001",
-    "title": "Weekly Planning Assistant",
-    "prompt_template": "I have these tasks for next week: [list tasks]. My available work hours are [X hours/day]. My energy is highest [time of day]. Create an optimized weekly schedule that batches similar tasks, protects deep work time, and includes buffer time for unexpected issues.",
-    "category": "Productivity",
-    "difficulty": "Beginner",
-    "when_to_use": "Sunday evening or Monday morning planning",
-    "why_it_works": "Considers energy levels and task batching for maximum efficiency",
-    "tags": ["planning", "time-management", "weekly-review"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "prod_002",
-    "title": "Meeting Optimizer",
-    "prompt_template": "This meeting agenda has [X] items: [list items]. We have [duration] minutes. Prioritize the agenda, allocate time for each item, suggest items to defer or handle async, and create talking points for the top 3 priorities.",
-    "category": "Productivity",
-    "difficulty": "Beginner",
-    "when_to_use": "15 minutes before any meeting",
-    "why_it_works": "Ensures meetings stay focused and productive",
-    "tags": ["meetings", "agenda", "time-management"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "prod_003",
-    "title": "Email Batch Processor",
-    "prompt_template": "Here are email subjects from my inbox: [list subjects]. Categorize them by: urgent response needed, can wait 24h, FYI only, and delegation opportunities. Suggest 1-line responses for the routine ones.",
-    "category": "Productivity",
-    "difficulty": "Intermediate",
-    "when_to_use": "During designated email time blocks",
-    "why_it_works": "Prevents email from consuming your entire day",
-    "tags": ["email", "communication", "batch-processing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "prod_004",
-    "title": "Task Prioritization Matrix",
-    "prompt_template": "My tasks today: [list all tasks]. My main goal this week is [goal]. Use the Eisenhower Matrix to categorize these tasks and suggest a specific order of execution based on impact and urgency.",
-    "category": "Productivity",
-    "difficulty": "Beginner",
-    "when_to_use": "Start of each workday",
-    "why_it_works": "Ensures you focus on important over urgent",
-    "tags": ["prioritization", "eisenhower-matrix", "daily-planning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "prod_005",
-    "title": "Focus Session Designer",
-    "prompt_template": "I need to do deep work on [project]. I have [time available]. Create a focus session plan with: specific outcome goals, 25-minute work blocks, 5-minute break activities, and potential distractions to eliminate.",
-    "category": "Productivity",
-    "difficulty": "Intermediate",
-    "when_to_use": "Before any deep work session",
-    "why_it_works": "Structure increases focus and output",
-    "tags": ["deep-work", "focus", "pomodoro"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "comm_001",
-    "title": "Difficult Conversation Navigator",
-    "prompt_template": "I need to discuss [issue] with [person/role]. They might react with [likely response]. Help me script this conversation using nonviolent communication: observation, feeling, need, request. Include how to handle 3 likely objections.",
-    "category": "Communication",
-    "difficulty": "Advanced",
-    "when_to_use": "Before any challenging conversation",
-    "why_it_works": "Reduces emotional charge and increases understanding",
-    "tags": ["difficult-conversations", "conflict-resolution", "communication"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "comm_002",
-    "title": "LinkedIn Post Generator",
-    "prompt_template": "Turn this achievement/insight into a LinkedIn post: [describe win or learning]. Make it humble yet authoritative, include a specific lesson learned, and end with a question to drive engagement. Keep under 1300 characters.",
-    "category": "Communication",
-    "difficulty": "Beginner",
-    "when_to_use": "Weekly professional brand building",
-    "why_it_works": "Balances professionalism with engagement",
-    "tags": ["social-media", "linkedin", "personal-brand"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "comm_003",
-    "title": "Stakeholder Update Composer",
-    "prompt_template": "Project: [name]. Status: [current state]. Issues: [list any]. Next steps: [list]. Transform this into an executive update that's scannable, highlights wins, addresses concerns proactively, and builds confidence.",
-    "category": "Communication",
-    "difficulty": "Intermediate",
-    "when_to_use": "Weekly or bi-weekly project updates",
-    "why_it_works": "Keeps stakeholders informed without overwhelming",
-    "tags": ["project-management", "stakeholder-communication", "reporting"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "comm_004",
-    "title": "Constructive Feedback Formatter",
-    "prompt_template": "I need to give feedback on [specific issue] to [person]. The impact was [describe impact]. Rewrite this using the SBI model (Situation-Behavior-Impact) and suggest 2-3 forward-looking solutions.",
-    "category": "Communication",
-    "difficulty": "Intermediate",
-    "when_to_use": "Performance reviews or immediate feedback needs",
-    "why_it_works": "Makes feedback specific and actionable",
-    "tags": ["feedback", "management", "performance"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "comm_005",
-    "title": "Sales Follow-Up Sequence",
-    "prompt_template": "Initial contact: [context]. Their challenges: [list]. Our solution: [brief description]. Create a 3-email follow-up sequence with different value angles, increasing urgency, and clear CTAs. Space 3-4 days apart.",
-    "category": "Communication",
-    "difficulty": "Advanced",
-    "when_to_use": "After initial sales conversations",
-    "why_it_works": "Maintains momentum without being pushy",
-    "tags": ["sales", "follow-up", "email-sequence"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "content_001",
-    "title": "Blog Post Outliner Pro",
-    "prompt_template": "Topic: [subject]. Target audience: [describe]. Their main pain point: [problem]. Create a comprehensive outline with: attention-grabbing headline options, introduction hook, 5-7 main points with subpoints, examples for each, and CTA options.",
-    "category": "Content Creation",
-    "difficulty": "Intermediate",
-    "when_to_use": "Before writing any long-form content",
-    "why_it_works": "Structure ensures comprehensive coverage",
-    "tags": ["blogging", "content-strategy", "writing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "content_002",
-    "title": "Social Media Content Calendar",
-    "prompt_template": "My business: [description]. This month's theme: [theme]. Create a 2-week social media calendar with daily posts for [platforms]. Include: content type, caption starter, hashtag suggestions, and engagement prompt.",
-    "category": "Content Creation",
-    "difficulty": "Beginner",
-    "when_to_use": "Monthly content planning sessions",
-    "why_it_works": "Maintains consistent presence without daily stress",
-    "tags": ["social-media", "content-calendar", "planning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "content_003",
-    "title": "Video Script Framework",
-    "prompt_template": "Video topic: [subject]. Duration: [time]. Audience: [describe]. Create a script structure with: hook (first 3 seconds), problem identification, solution reveal, proof/example, and clear next step. Include b-roll suggestions.",
-    "category": "Content Creation",
-    "difficulty": "Advanced",
-    "when_to_use": "YouTube, TikTok, or training video creation",
-    "why_it_works": "Keeps viewers engaged throughout",
-    "tags": ["video", "script-writing", "youtube"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "content_004",
-    "title": "Newsletter Value Builder",
-    "prompt_template": "Newsletter topic: [theme]. Subscriber interests: [list]. Create an edition with: subject line options, personal story opener, 3 valuable sections, 1 curated resource, and soft CTA. Make it scannable with clear headers.",
-    "category": "Content Creation",
-    "difficulty": "Intermediate",
-    "when_to_use": "Weekly/monthly newsletter creation",
-    "why_it_works": "Balances value with business goals",
-    "tags": ["newsletter", "email-marketing", "content"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "content_005",
-    "title": "Case Study Storyteller",
-    "prompt_template": "Client situation before: [describe]. What we did: [list actions]. Results: [metrics and outcomes]. Transform this into a compelling case study narrative with: challenge, solution, results, and client quote. Focus on transformation, not features.",
-    "category": "Content Creation",
-    "difficulty": "Advanced",
-    "when_to_use": "Building social proof and credibility",
-    "why_it_works": "Stories sell better than statistics",
-    "tags": ["case-study", "storytelling", "marketing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "learn_001",
-    "title": "Skill Gap Analyzer",
-    "prompt_template": "My current role: [position]. Dream role: [target position]. Analyze required skills for the dream role, identify my likely gaps, prioritize top 3 to develop, and suggest specific learning resources and practice projects for each.",
-    "category": "Learning",
-    "difficulty": "Beginner",
-    "when_to_use": "Career planning and development",
-    "why_it_works": "Creates actionable learning path",
-    "tags": ["career-development", "skill-assessment", "learning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "learn_002",
-    "title": "Book Knowledge Extractor",
-    "prompt_template": "I just read [book title] about [topic]. Key concepts I remember: [list]. Help me create: 5 actionable takeaways, 3 experiments to try this week, and 1 question for deeper reflection. Connect to my work in [field].",
-    "category": "Learning",
-    "difficulty": "Intermediate",
-    "when_to_use": "After finishing any business/development book",
-    "why_it_works": "Transforms passive reading into active application",
-    "tags": ["reading", "knowledge-retention", "application"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "learn_003",
-    "title": "Concept Simplifier",
-    "prompt_template": "Explain [complex concept] as if teaching a smart 12-year-old. Use an analogy from [everyday life/specific field]. Include: what it is, why it matters, how it works, and one practical example. Avoid jargon.",
-    "category": "Learning",
-    "difficulty": "Beginner",
-    "when_to_use": "Learning new concepts or teaching others",
-    "why_it_works": "True understanding requires simple explanation",
-    "tags": ["teaching", "simplification", "understanding"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "learn_004",
-    "title": "Practice Problem Generator",
-    "prompt_template": "I'm learning [skill/subject]. My current level: [beginner/intermediate/advanced]. Create 5 practice scenarios that progressively increase in difficulty. Include common mistakes to avoid and success criteria for each.",
-    "category": "Learning",
-    "difficulty": "Intermediate",
-    "when_to_use": "Skill development and practice",
-    "why_it_works": "Deliberate practice accelerates learning",
-    "tags": ["practice", "skill-development", "exercises"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "learn_005",
-    "title": "Learning Reflection Guide",
-    "prompt_template": "This week I tried to learn [skill/topic]. What worked: [list]. What didn't: [list]. Help me analyze why, adjust my approach, and create next week's learning plan with specific goals and measurement criteria.",
-    "category": "Learning",
-    "difficulty": "Advanced",
-    "when_to_use": "Weekly learning reviews",
-    "why_it_works": "Reflection cements learning and improves process",
-    "tags": ["reflection", "learning-optimization", "metacognition"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "decision_001",
-    "title": "Decision Matrix Builder",
-    "prompt_template": "Decision: [describe choice]. Options: [list options]. Important factors: [list criteria]. Create a weighted decision matrix, score each option, identify potential biases in my thinking, and suggest what additional info would help.",
-    "category": "Decision Making",
-    "difficulty": "Intermediate",
-    "when_to_use": "Any significant decision",
-    "why_it_works": "Brings objectivity to emotional decisions",
-    "tags": ["decision-making", "analysis", "framework"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "decision_002",
-    "title": "Risk Assessment Framework",
-    "prompt_template": "Project/Decision: [describe]. Create a risk assessment with: top 5 potential risks, likelihood (1-5), impact (1-5), mitigation strategies for high-priority risks, and early warning signals to monitor.",
-    "category": "Decision Making",
-    "difficulty": "Advanced",
-    "when_to_use": "Before major commitments",
-    "why_it_works": "Prevents surprises and enables preparation",
-    "tags": ["risk-management", "planning", "assessment"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "decision_003",
-    "title": "Strategic Options Generator",
-    "prompt_template": "Current situation: [describe]. Desired outcome: [goal]. Constraints: [list limitations]. Generate 5 different strategic approaches, including one conservative, one aggressive, one creative, one collaborative, and one pivot option. List pros/cons for each.",
-    "category": "Decision Making",
-    "difficulty": "Advanced",
-    "when_to_use": "Strategic planning sessions",
-    "why_it_works": "Expands thinking beyond obvious solutions",
-    "tags": ["strategy", "options", "planning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "decision_004",
-    "title": "Opportunity Cost Calculator",
-    "prompt_template": "If I commit to [opportunity], I'll invest [time/money/resources]. I'll have to say no to [other options]. Calculate the true opportunity cost, including hidden costs, compound effects over [timeframe], and what I might miss.",
-    "category": "Decision Making",
-    "difficulty": "Intermediate",
-    "when_to_use": "Before major commitments",
-    "why_it_works": "Reveals true cost of decisions",
-    "tags": ["opportunity-cost", "economics", "trade-offs"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "decision_005",
-    "title": "Scenario Planning Guide",
-    "prompt_template": "Decision/Project: [describe]. Create 3 scenarios: best case (everything goes right), worst case (major challenges), most likely case. For each, outline: key events, resource needs, success metrics, and pivot triggers.",
-    "category": "Decision Making",
-    "difficulty": "Advanced",
-    "when_to_use": "Planning with uncertainty",
-    "why_it_works": "Prepares for multiple futures",
-    "tags": ["scenario-planning", "forecasting", "contingency"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "personal_001",
-    "title": "Morning Routine Optimizer",
-    "prompt_template": "Current wake time: [time]. Must leave by: [time]. Energy goals: [list what you want to feel]. Design an optimal morning routine that includes: movement, mindfulness, nutrition, and priority setting. Make it realistic and sustainable.",
-    "category": "Personal Development",
-    "difficulty": "Beginner",
-    "when_to_use": "Designing or refining morning routine",
-    "why_it_works": "Strong mornings create strong days",
-    "tags": ["morning-routine", "habits", "productivity"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "personal_002",
-    "title": "Habit Stack Designer",
-    "prompt_template": "I want to build these habits: [list new habits]. My current solid habits: [list existing habits]. Create habit stacks by attaching new habits to existing ones. Include: trigger, routine, reward, and tracking method for each.",
-    "category": "Personal Development",
-    "difficulty": "Intermediate",
-    "when_to_use": "Building new behaviors",
-    "why_it_works": "Leverages existing neural pathways",
-    "tags": ["habits", "behavior-change", "routine"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "personal_003",
-    "title": "Energy Audit Analyzer",
-    "prompt_template": "Track my energy (1-10) for these activities: [list daily activities]. Identify energy drains vs. energy givers. Suggest how to minimize drains, maximize energizers, and redesign my schedule for optimal energy management.",
-    "category": "Personal Development",
-    "difficulty": "Intermediate",
-    "when_to_use": "Quarterly life design sessions",
-    "why_it_works": "Aligns schedule with natural rhythms",
-    "tags": ["energy-management", "optimization", "wellness"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "personal_004",
-    "title": "Values Clarification Exercise",
-    "prompt_template": "Recent decisions I've made: [list 5 decisions]. Analyze what values these reveal. Identify my top 5 core values, check for conflicts, and suggest how to better align daily actions with these values.",
-    "category": "Personal Development",
-    "difficulty": "Advanced",
-    "when_to_use": "Annual planning or life transitions",
-    "why_it_works": "Clear values simplify decisions",
-    "tags": ["values", "self-awareness", "alignment"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "personal_005",
-    "title": "Personal Board of Directors",
-    "prompt_template": "My goals: [list main goals]. My weaknesses: [list gaps]. Design my ideal 'personal board of directors' - 5 advisor archetypes I need, what I'd ask each, and real people who could fill these roles (or how to find them).",
-    "category": "Personal Development",
-    "difficulty": "Advanced",
-    "when_to_use": "Building support network",
-    "why_it_works": "Success requires diverse perspectives",
-    "tags": ["mentorship", "networking", "support-system"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "business_001",
-    "title": "Pricing Strategy Validator",
-    "prompt_template": "Product/Service: [describe]. Current price: $[X]. Costs: $[Y]. Competitor prices: [list]. Value provided: [list benefits]. Analyze if I'm underpriced, suggest 3 pricing tiers with justification, and how to test new prices.",
-    "category": "Business",
-    "difficulty": "Intermediate",
-    "when_to_use": "Pricing reviews or new offerings",
-    "why_it_works": "Most people underprice their value",
-    "tags": ["pricing", "strategy", "revenue"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "business_002",
-    "title": "Cash Flow Forecaster",
-    "prompt_template": "Monthly revenue: $[X]. Fixed costs: [list with amounts]. Variable costs: [list]. Upcoming large expenses: [list]. Create a 6-month cash flow forecast, identify danger periods, and suggest 3 ways to improve cash position.",
-    "category": "Business",
-    "difficulty": "Advanced",
-    "when_to_use": "Monthly financial planning",
-    "why_it_works": "Cash flow kills more businesses than profitability",
-    "tags": ["finance", "cash-flow", "forecasting"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "business_003",
-    "title": "Customer Persona Developer",
-    "prompt_template": "Product/Service: [describe]. Current best customers: [describe traits]. Create 3 detailed customer personas including: demographics, psychographics, pain points, buying triggers, objections, and where to find them.",
-    "category": "Business",
-    "difficulty": "Intermediate",
-    "when_to_use": "Marketing strategy development",
-    "why_it_works": "Specific targeting beats general marketing",
-    "tags": ["marketing", "customer-research", "personas"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "business_004",
-    "title": "Business Model Innovator",
-    "prompt_template": "Current business model: [describe how you make money]. Industry trends: [list changes]. Customer complaints: [list friction points]. Suggest 3 innovative business model variations that could increase revenue or reduce customer friction.",
-    "category": "Business",
-    "difficulty": "Advanced",
-    "when_to_use": "Strategic planning sessions",
-    "why_it_works": "Business model innovation drives growth",
-    "tags": ["strategy", "innovation", "business-model"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "business_005",
-    "title": "Investment Analysis Helper",
-    "prompt_template": "Investment opportunity: [describe]. Amount: $[X]. Expected return: [Y%]. Time horizon: [Z years]. My risk tolerance: [low/medium/high]. Analyze this opportunity, compare to alternatives, and list 5 questions I should ask before investing.",
-    "category": "Business",
-    "difficulty": "Intermediate",
-    "when_to_use": "Evaluating any investment",
-    "why_it_works": "Reduces emotional investing decisions",
-    "tags": ["investment", "analysis", "due-diligence"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "health_001",
-    "title": "Meal Prep Strategist",
-    "prompt_template": "Dietary goals: [list]. Weekly budget: $[X]. Time available: [Y hours]. Cooking skill: [level]. Create a meal prep plan with: shopping list, prep sequence, storage instructions, and variety throughout the week.",
-    "category": "Health",
-    "difficulty": "Beginner",
-    "when_to_use": "Sunday meal planning",
-    "why_it_works": "Preparation prevents poor food choices",
-    "tags": ["meal-prep", "nutrition", "planning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "health_002",
-    "title": "Workout Program Designer",
-    "prompt_template": "Fitness goal: [specific goal]. Current fitness level: [describe]. Available time: [X minutes/day]. Equipment: [what you have]. Design a 4-week progressive program with: exercises, sets/reps, rest days, and modification options.",
-    "category": "Health",
-    "difficulty": "Intermediate",
-    "when_to_use": "Starting or changing fitness routine",
-    "why_it_works": "Structured programs yield better results",
-    "tags": ["fitness", "exercise", "workout-planning"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "health_003",
-    "title": "Sleep Optimization Plan",
-    "prompt_template": "Current sleep issues: [list problems]. Bedtime: [time]. Wake time: [time]. Evening activities: [list]. Create a sleep optimization plan with: evening routine, environment changes, and habit modifications. Based on sleep science.",
-    "category": "Health",
-    "difficulty": "Beginner",
-    "when_to_use": "Improving sleep quality",
-    "why_it_works": "Better sleep improves everything",
-    "tags": ["sleep", "wellness", "routine"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "health_004",
-    "title": "Stress Management Toolkit",
-    "prompt_template": "My main stressors: [list top 5]. Physical stress symptoms: [list]. Time available for stress management: [X minutes/day]. Create a personalized toolkit with: quick techniques (2-5 min), daily practices (10-20 min), and weekly resets.",
-    "category": "Health",
-    "difficulty": "Intermediate",
-    "when_to_use": "High stress periods",
-    "why_it_works": "Multiple techniques for different situations",
-    "tags": ["stress-management", "mental-health", "wellness"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "health_005",
-    "title": "Energy Nutrition Planner",
-    "prompt_template": "Energy patterns: [when you crash]. Current eating schedule: [list meal times]. Food preferences: [list]. Design an eating schedule optimized for stable energy, including: meal timing, macro balance, snack options, and hydration schedule.",
-    "category": "Health",
-    "difficulty": "Advanced",
-    "when_to_use": "Fixing energy crashes",
-    "why_it_works": "Food timing affects energy as much as food choice",
-    "tags": ["nutrition", "energy", "meal-timing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "creative_001",
-    "title": "Idea Combination Matrix",
-    "prompt_template": "Industry/Field: [your area]. Take these 3 random concepts: [concept 1], [concept 2], [concept 3]. Force connections between them and my field to generate 10 innovative ideas. No judgment - wild ideas encouraged.",
-    "category": "Creativity",
-    "difficulty": "Intermediate",
-    "when_to_use": "Brainstorming sessions",
-    "why_it_works": "Innovation happens at intersections",
-    "tags": ["brainstorming", "innovation", "ideation"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "creative_002",
-    "title": "Problem Reframing Engine",
-    "prompt_template": "Problem: [describe issue]. Reframe this problem 7 different ways: as an opportunity, a systems issue, a communication gap, a resource challenge, a timing issue, a skill gap, and a mindset block. Generate solutions for each frame.",
-    "category": "Creativity",
-    "difficulty": "Advanced",
-    "when_to_use": "Stuck on any problem",
-    "why_it_works": "New frames reveal new solutions",
-    "tags": ["problem-solving", "reframing", "perspective"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "creative_003",
-    "title": "Creative Constraint Generator",
-    "prompt_template": "Project: [describe creative project]. Generate 5 interesting constraints that could paradoxically boost creativity (time, resources, materials, audience, style). Explain how each constraint might lead to innovation.",
-    "category": "Creativity",
-    "difficulty": "Intermediate",
-    "when_to_use": "Starting creative projects",
-    "why_it_works": "Constraints force creative solutions",
-    "tags": ["creativity", "constraints", "innovation"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "creative_004",
-    "title": "Metaphor Builder",
-    "prompt_template": "Complex concept: [what you're explaining]. Audience: [who you're explaining to]. Create 5 different metaphors from their world that explain this concept. Include how to extend each metaphor to explain nuances.",
-    "category": "Creativity",
-    "difficulty": "Advanced",
-    "when_to_use": "Teaching or persuading",
-    "why_it_works": "Metaphors make abstract concrete",
-    "tags": ["communication", "teaching", "metaphors"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "creative_005",
-    "title": "Innovation Opportunity Spotter",
-    "prompt_template": "Industry: [your field]. Recent complaints: [list customer frustrations]. Emerging technologies: [list relevant tech]. Identify 5 innovation opportunities at the intersection of these frustrations and technologies.",
-    "category": "Creativity",
-    "difficulty": "Advanced",
-    "when_to_use": "Strategic planning",
-    "why_it_works": "Innovation solves real problems",
-    "tags": ["innovation", "opportunity", "strategy"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "research_001",
-    "title": "Competitive Intelligence Gatherer",
-    "prompt_template": "Analyze [competitor name]. Find their: positioning, pricing model, main value props, customer complaints, recent changes, and potential weaknesses. Suggest 3 ways we could differentiate or outmaneuver them.",
-    "category": "Research",
-    "difficulty": "Intermediate",
-    "when_to_use": "Market analysis and strategy",
-    "why_it_works": "Know thy competition",
-    "tags": ["competitive-analysis", "market-research", "strategy"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "research_002",
-    "title": "Trend Pattern Recognizer",
-    "prompt_template": "Data points: [list observations over time]. Look for patterns in this data. Identify: trends, cycles, anomalies, and correlations. Predict next 3 likely data points and explain reasoning.",
-    "category": "Research",
-    "difficulty": "Advanced",
-    "when_to_use": "Analyzing any time-series data",
-    "why_it_works": "Patterns predict future",
-    "tags": ["data-analysis", "trends", "forecasting"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "research_003",
-    "title": "Root Cause Investigator",
-    "prompt_template": "Problem: [describe issue]. Symptoms: [what we're seeing]. Use the '5 Whys' technique to drill down to root causes. Then suggest solutions for both symptoms (quick fixes) and root causes (permanent solutions).",
-    "category": "Research",
-    "difficulty": "Intermediate",
-    "when_to_use": "Solving recurring problems",
-    "why_it_works": "Treats disease, not just symptoms",
-    "tags": ["problem-solving", "root-cause-analysis", "troubleshooting"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": true,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "research_004",
-    "title": "Market Opportunity Analyzer",
-    "prompt_template": "Industry: [field]. Target market: [describe]. Current solutions: [list what exists]. Analyze gaps in current solutions, underserved segments, and emerging needs. Rank top 5 opportunities by potential and feasibility.",
-    "category": "Research",
-    "difficulty": "Advanced",
-    "when_to_use": "Business development",
-    "why_it_works": "Finds blue ocean opportunities",
-    "tags": ["market-research", "opportunity-analysis", "strategy"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "research_005",
-    "title": "Data Story Constructor",
-    "prompt_template": "Data: [paste key statistics]. Audience: [who will see this]. Goal: [what action you want]. Transform this data into a compelling narrative with: headline insight, supporting evidence, implications, and clear next steps.",
-    "category": "Research",
-    "difficulty": "Intermediate",
-    "when_to_use": "Presenting data to stakeholders",
-    "why_it_works": "Stories drive action, not numbers",
-    "tags": ["data-visualization", "storytelling", "presentation"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "healthcare_001",
-    "title": "Patient Education Simplifier",
-    "prompt_template": "Medical condition: [diagnosis]. Patient profile: [age, education level]. Create a patient education sheet that explains: what it is, why it happened, treatment options, lifestyle changes, and warning signs. Use simple language and analogies.",
-    "category": "Healthcare",
-    "difficulty": "Intermediate",
-    "when_to_use": "After diagnosis discussions",
-    "why_it_works": "Improves compliance through understanding",
-    "tags": ["patient-education", "healthcare", "communication"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "healthcare_002",
-    "title": "Clinical Documentation Optimizer",
-    "prompt_template": "Patient encounter: [brief description]. Key findings: [list]. Create a SOAP note that is thorough yet concise, includes all billable elements, and flags any follow-up needs. Ensure compliance with [specific regulations].",
-    "category": "Healthcare",
-    "difficulty": "Advanced",
-    "when_to_use": "After patient appointments",
-    "why_it_works": "Saves documentation time while maintaining quality",
-    "tags": ["documentation", "clinical-notes", "healthcare"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "healthcare_003",
-    "title": "Treatment Plan Communicator",
-    "prompt_template": "Treatment plan: [outline]. Patient concerns: [list]. Family dynamics: [describe]. Create a communication strategy that addresses concerns, ensures understanding, and assigns clear responsibilities to patient and caregivers.",
-    "category": "Healthcare",
-    "difficulty": "Advanced",
-    "when_to_use": "Complex treatment planning",
-    "why_it_works": "Clear communication improves outcomes",
-    "tags": ["treatment-planning", "patient-communication", "healthcare"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "legal_001",
-    "title": "Contract Clause Analyzer",
-    "prompt_template": "Contract clause: [paste text]. Client goals: [what they want to achieve]. Identify potential risks, suggest protective modifications, and explain implications in plain English. Flag any unusual terms.",
-    "category": "Legal",
-    "difficulty": "Advanced",
-    "when_to_use": "Contract review process",
-    "why_it_works": "Catches issues before they become problems",
-    "tags": ["contract-review", "legal", "risk-assessment"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "legal_002",
-    "title": "Legal Research Synthesizer",
-    "prompt_template": "Legal question: [specific issue]. Jurisdiction: [location]. I've found these cases: [list]. Synthesize the key precedents, identify the strongest arguments for our position, and note any gaps in case law.",
-    "category": "Legal",
-    "difficulty": "Advanced",
-    "when_to_use": "Building legal arguments",
-    "why_it_works": "Organizes complex research efficiently",
-    "tags": ["legal-research", "case-law", "synthesis"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "legal_003",
-    "title": "Client Communication Translator",
-    "prompt_template": "Legal concept: [complex legal issue]. Client background: [education/industry]. Explain this concept using analogies from their field, outline practical implications, and provide 3 action items they can understand.",
-    "category": "Legal",
-    "difficulty": "Intermediate",
-    "when_to_use": "Client meetings and updates",
-    "why_it_works": "Reduces client confusion and callbacks",
-    "tags": ["client-communication", "legal", "simplification"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "education_001",
-    "title": "Differentiated Lesson Planner",
-    "prompt_template": "Topic: [subject matter]. Grade level: [grade]. Student needs: [list different learning levels]. Create a lesson plan with: core activity, extensions for advanced students, supports for struggling students, and assessment options.",
-    "category": "Education",
-    "difficulty": "Intermediate",
-    "when_to_use": "Weekly lesson planning",
-    "why_it_works": "Meets all students where they are",
-    "tags": ["lesson-planning", "differentiation", "education"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "education_002",
-    "title": "Parent Communication Bridge",
-    "prompt_template": "Student issue: [academic or behavioral]. Parent context: [what you know about family]. Create a communication plan that: states facts objectively, acknowledges emotions, suggests collaborative solutions, and schedules follow-up.",
-    "category": "Education",
-    "difficulty": "Intermediate",
-    "when_to_use": "Before difficult parent conversations",
-    "why_it_works": "Builds partnership instead of defensiveness",
-    "tags": ["parent-communication", "education", "collaboration"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "education_003",
-    "title": "Assessment Question Generator",
-    "prompt_template": "Learning objectives: [list what students should know]. Bloom's taxonomy levels needed: [list]. Create 15 assessment questions across different levels, include answer key, and suggest grading rubric points.",
-    "category": "Education",
-    "difficulty": "Advanced",
-    "when_to_use": "Test and quiz creation",
-    "why_it_works": "Ensures comprehensive assessment",
-    "tags": ["assessment", "testing", "education"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "realestate_001",
-    "title": "Property Listing Optimizer",
-    "prompt_template": "Property details: [features and stats]. Neighborhood: [area description]. Target buyer: [profile]. Write a compelling listing that highlights emotional benefits, uses power words, and creates urgency without being pushy.",
-    "category": "Real Estate",
-    "difficulty": "Beginner",
-    "when_to_use": "Creating or updating listings",
-    "why_it_works": "Emotional connection sells homes",
-    "tags": ["listings", "real-estate", "marketing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "realestate_002",
-    "title": "Comparative Market Analyzer",
-    "prompt_template": "Subject property: [details]. Recent comps: [list 3-5 with prices]. Market conditions: [describe]. Create a CMA narrative that justifies our pricing, addresses likely objections, and positions the property strategically.",
-    "category": "Real Estate",
-    "difficulty": "Intermediate",
-    "when_to_use": "Pricing discussions with clients",
-    "why_it_works": "Data-driven pricing builds trust",
-    "tags": ["CMA", "pricing", "real-estate"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "realestate_003",
-    "title": "Negotiation Strategy Builder",
-    "prompt_template": "Our position: [price and terms]. Their position: [offer details]. Market context: [conditions]. Create 3 negotiation paths: collaborative win-win, competitive if needed, and walk-away criteria. Include specific language for each.",
-    "category": "Real Estate",
-    "difficulty": "Advanced",
-    "when_to_use": "Offer negotiations",
-    "why_it_works": "Preparation improves outcomes",
-    "tags": ["negotiation", "real-estate", "strategy"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "tech_001",
-    "title": "Bug Report Enhancer",
-    "prompt_template": "Bug description: [what happened]. Steps taken: [list]. System info: [details]. Rewrite this bug report with: clear reproduction steps, expected vs actual behavior, impact assessment, and potential workarounds.",
-    "category": "Technology",
-    "difficulty": "Beginner",
-    "when_to_use": "Reporting technical issues",
-    "why_it_works": "Better reports get faster fixes",
-    "tags": ["bug-reporting", "documentation", "tech"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "tech_002",
-    "title": "Technical Documentation Creator",
-    "prompt_template": "Feature/Process: [what to document]. Target audience: [developers/users]. Create documentation with: overview, prerequisites, step-by-step instructions, common errors, and troubleshooting guide. Include code examples if relevant.",
-    "category": "Technology",
-    "difficulty": "Intermediate",
-    "when_to_use": "Documenting new features or processes",
-    "why_it_works": "Good docs reduce support burden",
-    "tags": ["documentation", "technical-writing", "tech"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "tech_003",
-    "title": "Architecture Decision Recorder",
-    "prompt_template": "Technical decision: [what was decided]. Options considered: [list alternatives]. Create an ADR (Architecture Decision Record) with: context, decision, consequences, and alternatives considered. Make it discoverable for future team members.",
-    "category": "Technology",
-    "difficulty": "Advanced",
-    "when_to_use": "After major technical decisions",
-    "why_it_works": "Preserves decision context over time",
-    "tags": ["architecture", "documentation", "tech"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "retail_001",
-    "title": "Product Description Writer",
-    "prompt_template": "Product: [name and features]. Target customer: [profile]. Competition: [similar products]. Write a product description that: addresses pain points, highlights unique benefits, includes sensory details, and overcomes purchase hesitation.",
-    "category": "Retail",
-    "difficulty": "Beginner",
-    "when_to_use": "Launching new products",
-    "why_it_works": "Connects features to customer needs",
-    "tags": ["product-description", "e-commerce", "marketing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "retail_002",
-    "title": "Customer Service Response Kit",
-    "prompt_template": "Common complaint: [issue]. Our policy: [what we can do]. Create 3 response templates: empathetic initial response, solution offering, and follow-up check-in. Include personalization points and escalation triggers.",
-    "category": "Retail",
-    "difficulty": "Intermediate",
-    "when_to_use": "Training service teams",
-    "why_it_works": "Consistency with personality",
-    "tags": ["customer-service", "templates", "retail"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "retail_003",
-    "title": "Inventory Story Analyzer",
-    "prompt_template": "Slow-moving items: [list with quantities]. Original positioning: [how marketed]. Season: [current time]. Create clearance strategies that maintain brand value, bundle opportunities, and marketing angles to move inventory.",
-    "category": "Retail",
-    "difficulty": "Advanced",
-    "when_to_use": "Inventory management reviews",
-    "why_it_works": "Moves product while protecting margins",
-    "tags": ["inventory", "merchandising", "retail"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "nonprofit_001",
-    "title": "Grant Proposal Narrative",
-    "prompt_template": "Program: [what you're funding]. Funder priorities: [their focus areas]. Our impact data: [metrics]. Create a compelling narrative that aligns our program with their mission, shows measurable impact, and makes the ask irresistible.",
-    "category": "Non-Profit",
-    "difficulty": "Advanced",
-    "when_to_use": "Grant application writing",
-    "why_it_works": "Connects mission to money",
-    "tags": ["grant-writing", "fundraising", "nonprofit"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "nonprofit_002",
-    "title": "Donor Impact Storyteller",
-    "prompt_template": "Beneficiary story: [real example]. Donor segment: [who you're targeting]. Campaign goal: [fundraising target]. Transform this story to show direct donor impact, create emotional connection, and include clear call-to-action.",
-    "category": "Non-Profit",
-    "difficulty": "Intermediate",
-    "when_to_use": "Fundraising campaigns",
-    "why_it_works": "Stories raise more than statistics",
-    "tags": ["storytelling", "fundraising", "nonprofit"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "nonprofit_003",
-    "title": "Volunteer Engagement Optimizer",
-    "prompt_template": "Volunteer role: [position needs]. Time commitment: [hours required]. Current volunteers: [profile]. Create recruitment materials that: show impact, address time concerns, highlight community benefits, and make signing up easy.",
-    "category": "Non-Profit",
-    "difficulty": "Beginner",
-    "when_to_use": "Volunteer recruitment",
-    "why_it_works": "Addresses barriers upfront",
-    "tags": ["volunteer-management", "recruitment", "nonprofit"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "hospitality_001",
-    "title": "Guest Experience Personalizer",
-    "prompt_template": "Guest profile: [preferences and history]. Occasion: [why they're visiting]. Our amenities: [what we offer]. Create a personalized experience plan with surprise touches, upsell opportunities, and memorable moments.",
-    "category": "Hospitality",
-    "difficulty": "Intermediate",
-    "when_to_use": "VIP guest preparation",
-    "why_it_works": "Personalization drives loyalty",
-    "tags": ["guest-experience", "personalization", "hospitality"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "hospitality_002",
-    "title": "Service Recovery Script",
-    "prompt_template": "Service failure: [what went wrong]. Guest reaction: [their response]. Our constraints: [what we can offer]. Create a service recovery plan that acknowledges, apologizes, acts, and follows up. Include empowerment guidelines.",
-    "category": "Hospitality",
-    "difficulty": "Advanced",
-    "when_to_use": "Guest complaint resolution",
-    "why_it_works": "Turns problems into loyalty opportunities",
-    "tags": ["service-recovery", "customer-service", "hospitality"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "hospitality_003",
-    "title": "Menu Description Crafter",
-    "prompt_template": "Dish: [ingredients and preparation]. Price point: [cost]. Restaurant style: [ambiance/theme]. Write a menu description that tells a story, triggers senses, justifies price, and makes it irresistible.",
-    "category": "Hospitality",
-    "difficulty": "Beginner",
-    "when_to_use": "Menu development",
-    "why_it_works": "Words influence taste perception",
-    "tags": ["menu-writing", "marketing", "hospitality"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
-  },
-  {
-    "id": "manufacturing_001",
-    "title": "Process Improvement Identifier",
-    "prompt_template": "Current process: [step-by-step description]. Bottlenecks: [where delays occur]. Resources: [available tools/people]. Analyze using lean principles, identify waste, suggest improvements, and estimate time/cost savings.",
-    "category": "Manufacturing",
-    "difficulty": "Advanced",
-    "when_to_use": "Continuous improvement initiatives",
-    "why_it_works": "Systematic approach to efficiency",
-    "tags": ["process-improvement", "lean", "manufacturing"],
-    "rating": 0,
-    "times_used": 0,
-    "is_featured": false,
-    "created_at": "2024-01-01T00:00:00Z",
-    "author": "system"
+    id: 'email-writer-pro',
+    title: 'Professional Email Writer',
+    prompt_template: `You are a professional communication expert. Write a [TYPE] email for the following situation:
+
+Context: [DESCRIBE THE SITUATION]
+Recipient: [WHO YOU'RE WRITING TO]
+Goal: [WHAT YOU WANT TO ACHIEVE]
+Tone: [PROFESSIONAL/FRIENDLY/FORMAL]
+
+Please write an email that:
+- Has a clear, compelling subject line
+- Opens with appropriate greeting
+- States the purpose clearly in the first paragraph
+- Provides necessary details in a logical order
+- Includes a clear call-to-action
+- Closes professionally
+
+Email:`,
+    category: 'Communication',
+    difficulty: 'Beginner',
+    when_to_use: 'When you need to write professional emails quickly and effectively',
+    why_it_works: 'Provides a clear structure that ensures all important elements are included while maintaining professional tone',
+    tags: ['email', 'communication', 'professional', 'business'],
+    rating: 4.8,
+    times_used: 1247,
+    is_featured: true,
+    author: 'system',
+    created_at: '2024-01-15T10:00:00Z'
+  },
+  {
+    id: 'content-strategy-generator',
+    title: 'Content Strategy Generator',
+    prompt_template: `Act as a content marketing strategist. Create a comprehensive content strategy for:
+
+Business/Brand: [YOUR BUSINESS]
+Target Audience: [DESCRIBE YOUR AUDIENCE]
+Goals: [WHAT YOU WANT TO ACHIEVE]
+Platforms: [WHERE YOU'LL PUBLISH]
+Timeline: [HOW LONG/HOW OFTEN]
+
+Please provide:
+1. Content pillars (3-5 main themes)
+2. Content types that work best for this audience
+3. Posting frequency recommendations
+4. 10 specific content ideas with headlines
+5. Engagement strategies
+6. Metrics to track success
+
+Make it actionable and specific to my industry.`,
+    category: 'Content Creation',
+    difficulty: 'Intermediate',
+    when_to_use: 'When planning content marketing campaigns or developing content calendars',
+    why_it_works: 'Breaks down complex strategy into actionable components with specific deliverables',
+    tags: ['content', 'marketing', 'strategy', 'social media'],
+    rating: 4.6,
+    times_used: 892,
+    is_featured: true,
+    author: 'system',
+    created_at: '2024-01-20T14:30:00Z'
+  },
+  {
+    id: 'meeting-agenda-optimizer',
+    title: 'Meeting Agenda Optimizer',
+    prompt_template: `You are a productivity expert specializing in efficient meetings. Create an optimized agenda for:
+
+Meeting Type: [TEAM MEETING/CLIENT CALL/BRAINSTORM/etc.]
+Duration: [HOW LONG]
+Attendees: [WHO'S ATTENDING]
+Main Objective: [PRIMARY GOAL]
+Key Topics: [LIST MAIN TOPICS TO COVER]
+
+Create an agenda that includes:
+- Pre-meeting preparation items
+- Time-boxed agenda items with specific durations
+- Clear objectives for each agenda item
+- Assigned roles (facilitator, note-taker, etc.)
+- Decision points and action items format
+- Follow-up plan
+
+Make it efficient and ensure we achieve our objectives.`,
+    category: 'Productivity',
+    difficulty: 'Beginner',
+    when_to_use: 'Before any important meeting to ensure it\'s productive and well-structured',
+    why_it_works: 'Provides time management and clear objectives that prevent meetings from going off-track',
+    tags: ['meetings', 'productivity', 'planning', 'teamwork'],
+    rating: 4.7,
+    times_used: 654,
+    is_featured: false,
+    author: 'system',
+    created_at: '2024-01-25T09:15:00Z'
+  },
+  {
+    id: 'problem-solving-framework',
+    title: 'Strategic Problem Solver',
+    prompt_template: `You are a strategic consultant with expertise in problem-solving frameworks. Help me analyze and solve this problem:
+
+Problem Statement: [DESCRIBE THE PROBLEM]
+Context: [BACKGROUND INFORMATION]
+Constraints: [LIMITATIONS/RESOURCES]
+Stakeholders: [WHO'S AFFECTED]
+Timeline: [WHEN SOLUTION IS NEEDED]
+
+Please use a structured approach:
+
+1. Problem Analysis:
+   - Root cause analysis
+   - Problem breakdown
+   - Impact assessment
+
+2. Solution Generation:
+   - 3-5 potential solutions
+   - Pros and cons for each
+   - Resource requirements
+
+3. Recommendation:
+   - Best solution with rationale
+   - Implementation steps
+   - Risk mitigation
+   - Success metrics
+
+4. Next Steps:
+   - Immediate actions
+   - Timeline
+   - Stakeholder communication plan`,
+    category: 'Decision Making',
+    difficulty: 'Advanced',
+    when_to_use: 'When facing complex business or personal problems that need systematic analysis',
+    why_it_works: 'Uses proven consulting frameworks to break down complex problems into manageable components',
+    tags: ['problem-solving', 'strategy', 'analysis', 'decision-making'],
+    rating: 4.9,
+    times_used: 423,
+    is_featured: true,
+    author: 'system',
+    created_at: '2024-02-01T16:45:00Z'
+  },
+  {
+    id: 'learning-plan-creator',
+    title: 'Personalized Learning Plan Creator',
+    prompt_template: `You are a learning and development expert. Create a personalized learning plan for:
+
+Skill/Topic: [WHAT YOU WANT TO LEARN]
+Current Level: [BEGINNER/INTERMEDIATE/ADVANCED]
+Available Time: [HOURS PER WEEK]
+Learning Style: [VISUAL/AUDITORY/KINESTHETIC/READING]
+Goal Timeline: [WHEN YOU WANT TO ACHIEVE PROFICIENCY]
+Specific Goals: [WHAT YOU WANT TO ACCOMPLISH]
+
+Create a comprehensive plan including:
+
+1. Learning Objectives (SMART goals)
+2. Curriculum Breakdown:
+   - Week-by-week topics
+   - Learning resources for each topic
+   - Practical exercises/projects
+   - Assessment methods
+
+3. Resource Recommendations:
+   - Books, courses, videos
+   - Practice platforms
+   - Communities to join
+
+4. Progress Tracking:
+   - Milestones and checkpoints
+   - Self-assessment methods
+   - Portfolio/project ideas
+
+5. Tips for Success:
+   - Study techniques
+   - Common pitfalls to avoid
+   - Motivation strategies
+
+Make it actionable and tailored to my specific situation.`,
+    category: 'Learning',
+    difficulty: 'Intermediate',
+    when_to_use: 'When you want to learn a new skill systematically and efficiently',
+    why_it_works: 'Combines learning science principles with personalized approach for maximum retention',
+    tags: ['learning', 'education', 'skill-development', 'planning'],
+    rating: 4.5,
+    times_used: 789,
+    is_featured: false,
+    author: 'system',
+    created_at: '2024-02-10T11:20:00Z'
+  },
+  {
+    id: 'presentation-storyteller',
+    title: 'Compelling Presentation Builder',
+    prompt_template: `You are a presentation expert who specializes in storytelling and audience engagement. Help me create a compelling presentation:
+
+Topic: [YOUR PRESENTATION TOPIC]
+Audience: [WHO YOU'RE PRESENTING TO]
+Duration: [HOW LONG]
+Objective: [WHAT YOU WANT TO ACHIEVE]
+Key Messages: [MAIN POINTS TO CONVEY]
+Context: [WHERE/WHEN/WHY]
+
+Create a presentation structure that includes:
+
+1. Opening Hook:
+   - Attention-grabbing opener
+   - Clear value proposition
+   - Agenda overview
+
+2. Main Content:
+   - 3-5 key sections with logical flow
+   - Supporting evidence/examples
+   - Visual suggestions for each section
+   - Transition statements
+
+3. Storytelling Elements:
+   - Relevant anecdotes or case studies
+   - Emotional connection points
+   - Conflict and resolution
+
+4. Closing:
+   - Summary of key takeaways
+   - Clear call-to-action
+   - Memorable ending
+
+5. Engagement Strategies:
+   - Interactive elements
+   - Q&A preparation
+   - Audience participation ideas
+
+Make it engaging and persuasive for my specific audience.`,
+    category: 'Communication',
+    difficulty: 'Intermediate',
+    when_to_use: 'When preparing important presentations that need to persuade or inform effectively',
+    why_it_works: 'Combines storytelling principles with presentation best practices for maximum impact',
+    tags: ['presentation', 'storytelling', 'communication', 'persuasion'],
+    rating: 4.4,
+    times_used: 567,
+    is_featured: false,
+    author: 'system',
+    created_at: '2024-02-15T13:10:00Z'
   }
 ]
 
-// Helper functions for filtering and searching
 export function getPromptsByCategory(category: string): PromptTemplate[] {
   return PROMPT_LIBRARY.filter(prompt => prompt.category === category)
 }
@@ -1155,15 +265,13 @@ export function getPromptsByDifficulty(difficulty: PromptTemplate['difficulty'])
   return PROMPT_LIBRARY.filter(prompt => prompt.difficulty === difficulty)
 }
 
-export function searchPrompts(searchTerm: string): PromptTemplate[] {
-  const term = searchTerm.toLowerCase()
+export function searchPrompts(query: string): PromptTemplate[] {
+  const lowercaseQuery = query.toLowerCase()
   return PROMPT_LIBRARY.filter(prompt =>
-    prompt.title.toLowerCase().includes(term) ||
-    prompt.prompt_template.toLowerCase().includes(term) ||
-    prompt.category.toLowerCase().includes(term) ||
-    prompt.tags.some(tag => tag.toLowerCase().includes(term)) ||
-    prompt.when_to_use.toLowerCase().includes(term) ||
-    prompt.why_it_works.toLowerCase().includes(term)
+    prompt.title.toLowerCase().includes(lowercaseQuery) ||
+    prompt.prompt_template.toLowerCase().includes(lowercaseQuery) ||
+    prompt.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
+    prompt.category.toLowerCase().includes(lowercaseQuery)
   )
 }
 
@@ -1172,7 +280,8 @@ export function getUniqueCategories(): string[] {
 }
 
 export function getUniqueTags(): string[] {
-  return Array.from(new Set(PROMPT_LIBRARY.flatMap(prompt => prompt.tags))).sort()
+  const allTags = PROMPT_LIBRARY.flatMap(prompt => prompt.tags)
+  return Array.from(new Set(allTags)).sort()
 }
 
 export function getPromptById(id: string): PromptTemplate | undefined {

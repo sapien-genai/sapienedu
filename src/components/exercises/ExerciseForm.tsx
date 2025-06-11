@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Save, CheckCircle } from 'lucide-react'
+import { AI_READINESS_CATEGORIES, AIReadinessScoring } from '@/data/aiReadinessAssessment'
+import AIReadinessResults from './AIReadinessResults'
 import type { BookExercise } from '@/data/bookContent'
 
 interface ExerciseFormProps {
@@ -19,10 +21,17 @@ export default function ExerciseForm({
 }: ExerciseFormProps) {
   const [formData, setFormData] = useState<any>({})
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [showResults, setShowResults] = useState(false)
+
+  const isAIReadinessAssessment = exercise.id === 'ch1-ex1' || exercise.type === 'assessment'
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
+      // Show results if this is an AI readiness assessment and we have data
+      if (isAIReadinessAssessment && Object.keys(initialData).length > 0) {
+        setShowResults(true)
+      }
     } else {
       // Initialize form with default values
       const defaultData: any = {}
@@ -46,7 +55,7 @@ export default function ExerciseForm({
       }
       setFormData(defaultData)
     }
-  }, [exercise, initialData])
+  }, [exercise, initialData, isAIReadinessAssessment])
 
   const getDefaultValue = (field: any) => {
     switch (field.type) {
@@ -110,6 +119,98 @@ export default function ExerciseForm({
     }
 
     await onSubmit(formData)
+    
+    // Show results for AI readiness assessment
+    if (isAIReadinessAssessment) {
+      setShowResults(true)
+    }
+  }
+
+  const renderAIReadinessAssessment = () => {
+    const currentCategoryIndex = Math.floor(Object.keys(formData).length / 4)
+    const currentCategory = AI_READINESS_CATEGORIES[currentCategoryIndex] || AI_READINESS_CATEGORIES[0]
+    const progress = (Object.keys(formData).filter(key => formData[key] > 0).length / 16) * 100
+
+    return (
+      <div className="space-y-8">
+        {/* Progress */}
+        <div className="mb-8">
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Assessment Progress</span>
+            <span>{Math.round(progress)}% Complete</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-primary-500 to-success-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Categories */}
+        {AI_READINESS_CATEGORIES.map((category, categoryIndex) => (
+          <div key={category.id} className="space-y-6">
+            <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+              <span className="text-3xl">{category.icon}</span>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">{category.name}</h3>
+                <p className="text-sm text-gray-600">
+                  Rate each statement from 0 (never/strongly disagree) to 3 (always/strongly agree)
+                </p>
+              </div>
+            </div>
+
+            {category.questions.map((question, questionIndex) => {
+              const value = formData[question.id] || 0
+              const error = errors[question.id]
+
+              return (
+                <div key={question.id} className="bg-gray-50 rounded-lg p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-sm font-medium text-gray-500">
+                          Question {categoryIndex * 4 + questionIndex + 1} of 16
+                        </span>
+                        {question.weight !== 1 && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            High Impact
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-lg text-gray-900 font-medium">{question.text}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Never / Strongly Disagree</span>
+                    <div className="flex space-x-3">
+                      {[0, 1, 2, 3].map((rating) => (
+                        <button
+                          key={rating}
+                          type="button"
+                          onClick={() => handleFieldChange(question.id, rating)}
+                          className={`w-12 h-12 rounded-full border-2 text-sm font-semibold transition-all duration-200 ${
+                            value === rating
+                              ? 'border-primary-500 bg-primary-500 text-white shadow-lg scale-110'
+                              : 'border-gray-300 text-gray-700 hover:border-primary-300 hover:scale-105'
+                          }`}
+                        >
+                          {rating}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">Always / Strongly Agree</span>
+                  </div>
+
+                  {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    )
   }
 
   const renderField = (field: any, fieldId: string, label?: string) => {
@@ -261,6 +362,11 @@ export default function ExerciseForm({
       return <div className="text-gray-500">No form fields configured for this exercise.</div>
     }
 
+    // Special handling for AI Readiness Assessment
+    if (isAIReadinessAssessment) {
+      return renderAIReadinessAssessment()
+    }
+
     const fields: React.ReactNode[] = []
 
     Object.entries(exercise.fields).forEach(([key, fieldConfig]: [string, any]) => {
@@ -296,6 +402,16 @@ export default function ExerciseForm({
     })
 
     return fields
+  }
+
+  // Show results if this is an AI readiness assessment and we have results
+  if (isAIReadinessAssessment && showResults && Object.keys(formData).length > 0) {
+    return (
+      <AIReadinessResults 
+        responses={formData}
+        onRetake={() => setShowResults(false)}
+      />
+    )
   }
 
   return (
