@@ -1,22 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Target, CheckCircle, Clock, Filter, Search } from 'lucide-react'
+import { Target, CheckCircle, Clock, Filter, Search, BookOpen } from 'lucide-react'
 import { getUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
-import { EXERCISES } from '@/lib/exercises'
+import { useBookExercises, useChapters } from '@/hooks/useBookContent'
 import DashboardLayout from '@/components/layout/DashboardLayout'
+import ExerciseCard from '@/components/exercises/ExerciseCard'
 import Badge from '@/components/ui/Badge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import ProgressBar from '@/components/ui/ProgressBar'
 
 interface ExerciseWithProgress {
   id: string
-  type: string
+  chapter: number
+  exercise_number: number
   title: string
   description: string
-  chapter: number
-  exercise: number
+  type: string
+  fields: any
+  sort_order: number
   completed: boolean
-  lastUpdated?: string
+  completed_at?: string
 }
 
 export default function ExercisesPage() {
@@ -25,9 +29,13 @@ export default function ExercisesPage() {
   const [exercises, setExercises] = useState<ExerciseWithProgress[]>([])
   const [filteredExercises, setFilteredExercises] = useState<ExerciseWithProgress[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterChapter, setFilterChapter] = useState('all')
   const [filterType, setFilterType] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const navigate = useNavigate()
+
+  const { exercises: bookExercises, loading: exercisesLoading } = useBookExercises()
+  const { chapters } = useChapters()
 
   const exerciseTypes = [
     { value: 'all', label: 'All Types' },
@@ -36,13 +44,15 @@ export default function ExercisesPage() {
     { value: 'promptBuilder', label: 'Prompt Building' },
     { value: 'goals', label: 'Goal Setting' },
     { value: 'reflection', label: 'Reflection' },
-    { value: 'habits', label: 'Habit Tracking' }
+    { value: 'habits', label: 'Habit Tracking' },
+    { value: 'text_input', label: 'Text Input' },
+    { value: 'planning', label: 'Planning' },
+    { value: 'tracking', label: 'Progress Tracking' }
   ]
 
   const statusOptions = [
     { value: 'all', label: 'All Status' },
     { value: 'completed', label: 'Completed' },
-    { value: 'in-progress', label: 'In Progress' },
     { value: 'not-started', label: 'Not Started' }
   ]
 
@@ -51,8 +61,14 @@ export default function ExercisesPage() {
   }, [])
 
   useEffect(() => {
+    if (bookExercises.length > 0) {
+      loadExerciseProgress()
+    }
+  }, [bookExercises])
+
+  useEffect(() => {
     filterExercises()
-  }, [exercises, searchTerm, filterType, filterStatus])
+  }, [exercises, searchTerm, filterChapter, filterType, filterStatus])
 
   const checkAuthAndLoadData = async () => {
     try {
@@ -63,7 +79,6 @@ export default function ExercisesPage() {
       }
 
       setUser(currentUser)
-      await loadExercises(currentUser.id)
     } catch (error) {
       console.error('Error loading exercises:', error)
       navigate('/auth/login')
@@ -72,40 +87,37 @@ export default function ExercisesPage() {
     }
   }
 
-  const loadExercises = async (userId: string) => {
-    try {
-      // Get user's exercise progress
-      const { data: userExercises } = await supabase
-        .from('exercises')
-        .select('*')
-        .eq('user_id', userId)
+  const loadExerciseProgress = async () => {
+    if (!user) return
 
-      const userExerciseMap = new Map()
-      userExercises?.forEach(exercise => {
-        userExerciseMap.set(exercise.id, exercise)
+    try {
+      // Get user's exercise responses
+      const { data: responses } = await supabase
+        .from('exercise_responses')
+        .select('exercise_id, completed_at')
+        .eq('user_id', user.id)
+
+      const responseMap = new Map()
+      responses?.forEach(response => {
+        responseMap.set(response.exercise_id, response.completed_at)
       })
 
       // Combine with exercise definitions
-      const exercisesWithProgress: ExerciseWithProgress[] = EXERCISES.map(exercise => {
-        const userExercise = userExerciseMap.get(exercise.id)
-        return {
-          id: exercise.id,
-          type: exercise.type,
-          title: exercise.title,
-          description: exercise.description,
-          chapter: exercise.chapter,
-          exercise: exercise.exercise,
-          completed: userExercise?.completed || false,
-          lastUpdated: userExercise?.updated_at
-        }
+      const exercisesWithProgress: ExerciseWithProgress[] = bookExercises.map(exercise => ({
+        ...exercise,
+        completed: responseMap.has(exercise.id),
+        completed_at: responseMap.get(exercise.id)
+      }))
+
+      // Sort by chapter and exercise number
+      exercisesWithProgress.sort((a, b) => {
+        if (a.chapter !== b.chapter) return a.chapter - b.chapter
+        return a.exercise_number - b.exercise_number
       })
 
-      setExercises(exercisesWithProgress.sort((a, b) => {
-        if (a.chapter !== b.chapter) return a.chapter - b.chapter
-        return a.exercise - b.exercise
-      }))
+      setExercises(exercisesWithProgress)
     } catch (error) {
-      console.error('Error loading exercises:', error)
+      console.error('Error loading exercise progress:', error)
     }
   }
 
@@ -120,6 +132,11 @@ export default function ExercisesPage() {
       )
     }
 
+    // Filter by chapter
+    if (filterChapter !== 'all') {
+      filtered = filtered.filter(exercise => exercise.chapter === parseInt(filterChapter))
+    }
+
     // Filter by type
     if (filterType !== 'all') {
       filtered = filtered.filter(exercise => exercise.type === filterType)
@@ -129,34 +146,20 @@ export default function ExercisesPage() {
     if (filterStatus !== 'all') {
       if (filterStatus === 'completed') {
         filtered = filtered.filter(exercise => exercise.completed)
-      } else if (filterStatus === 'in-progress') {
-        filtered = filtered.filter(exercise => exercise.lastUpdated && !exercise.completed)
       } else if (filterStatus === 'not-started') {
-        filtered = filtered.filter(exercise => !exercise.lastUpdated)
+        filtered = filtered.filter(exercise => !exercise.completed)
       }
     }
 
     setFilteredExercises(filtered)
   }
 
-  const getExerciseTypeLabel = (type: string) => {
-    const typeObj = exerciseTypes.find(t => t.value === type)
-    return typeObj?.label || type
+  const getChapterTitle = (chapterNumber: number) => {
+    const chapter = chapters.find(c => c.number === chapterNumber)
+    return chapter ? chapter.title : `Chapter ${chapterNumber}`
   }
 
-  const getExerciseTypeColor = (type: string) => {
-    const colors: { [key: string]: string } = {
-      assessment: 'bg-blue-50 text-blue-700',
-      timeTracking: 'bg-green-50 text-green-700',
-      promptBuilder: 'bg-purple-50 text-purple-700',
-      goals: 'bg-yellow-50 text-yellow-700',
-      reflection: 'bg-pink-50 text-pink-700',
-      habits: 'bg-indigo-50 text-indigo-700'
-    }
-    return colors[type] || 'bg-gray-50 text-gray-700'
-  }
-
-  if (loading) {
+  if (loading || exercisesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -167,9 +170,10 @@ export default function ExercisesPage() {
   const stats = {
     total: exercises.length,
     completed: exercises.filter(e => e.completed).length,
-    inProgress: exercises.filter(e => e.lastUpdated && !e.completed).length,
-    notStarted: exercises.filter(e => !e.lastUpdated).length
+    notStarted: exercises.filter(e => !e.completed).length
   }
+
+  const completionPercentage = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
 
   return (
     <DashboardLayout user={user}>
@@ -190,23 +194,33 @@ export default function ExercisesPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="card text-center">
-            <div className="text-2xl font-bold text-gray-900 mb-1">{stats.total}</div>
-            <div className="text-sm text-gray-600">Total Exercises</div>
+        {/* Overall Progress */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Overall Progress</h2>
+            <Badge variant="success" size="lg">
+              {Math.round(completionPercentage)}% Complete
+            </Badge>
           </div>
-          <div className="card text-center">
-            <div className="text-2xl font-bold text-success-600 mb-1">{stats.completed}</div>
-            <div className="text-sm text-gray-600">Completed</div>
-          </div>
-          <div className="card text-center">
-            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.inProgress}</div>
-            <div className="text-sm text-gray-600">In Progress</div>
-          </div>
-          <div className="card text-center">
-            <div className="text-2xl font-bold text-gray-600 mb-1">{stats.notStarted}</div>
-            <div className="text-sm text-gray-600">Not Started</div>
+          <ProgressBar 
+            progress={completionPercentage} 
+            size="lg" 
+            showPercentage={false}
+            className="mb-4"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-sm text-gray-600">Total Exercises</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-success-600">{stats.completed}</div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-600">{stats.notStarted}</div>
+              <div className="text-sm text-gray-600">Not Started</div>
+            </div>
           </div>
         </div>
 
@@ -227,6 +241,22 @@ export default function ExercisesPage() {
                   className="input-field pl-10"
                 />
               </div>
+            </div>
+
+            {/* Chapter Filter */}
+            <div className="md:w-48">
+              <select
+                value={filterChapter}
+                onChange={(e) => setFilterChapter(e.target.value)}
+                className="input-field"
+              >
+                <option value="all">All Chapters</option>
+                {chapters.map(chapter => (
+                  <option key={chapter.number} value={chapter.number}>
+                    Chapter {chapter.number}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Type Filter */}
@@ -264,65 +294,12 @@ export default function ExercisesPage() {
         {/* Exercises List */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredExercises.map((exercise) => (
-            <Link
+            <ExerciseCard
               key={exercise.id}
-              to={`/exercises/${exercise.id}`}
-              className="card hover:shadow-lg transition-all duration-200 group"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
-                    exercise.completed 
-                      ? 'bg-success-100 text-success-600' 
-                      : exercise.lastUpdated 
-                        ? 'bg-primary-100 text-primary-600' 
-                        : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    {exercise.completed ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : exercise.lastUpdated ? (
-                      <Clock className="w-5 h-5" />
-                    ) : (
-                      <Target className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      Chapter {exercise.chapter} - Exercise {exercise.exercise}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant={exercise.completed ? 'success' : 'default'} 
-                    size="sm"
-                  >
-                    {exercise.completed ? 'Completed' : exercise.lastUpdated ? 'In Progress' : 'Not Started'}
-                  </Badge>
-                </div>
-              </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors duration-200">
-                {exercise.title}
-              </h3>
-              
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {exercise.description}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getExerciseTypeColor(exercise.type)}`}>
-                  {getExerciseTypeLabel(exercise.type)}
-                </span>
-                
-                {exercise.lastUpdated && (
-                  <span className="text-xs text-gray-500">
-                    Updated {new Date(exercise.lastUpdated).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-            </Link>
+              exercise={exercise}
+              isCompleted={exercise.completed}
+              completedAt={exercise.completed_at}
+            />
           ))}
         </div>
 
@@ -331,10 +308,31 @@ export default function ExercisesPage() {
             <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No exercises found</h3>
             <p className="text-gray-600">
-              {searchTerm || filterType !== 'all' || filterStatus !== 'all'
+              {searchTerm || filterChapter !== 'all' || filterType !== 'all' || filterStatus !== 'all'
                 ? 'Try adjusting your filters or search terms.'
                 : 'Get started by completing your first exercise.'}
             </p>
+          </div>
+        )}
+
+        {/* Quick Start */}
+        {stats.completed === 0 && filteredExercises.length > 0 && (
+          <div className="card bg-gradient-to-r from-primary-50 to-success-50 border-primary-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-primary-900 mb-2">Ready to get started?</h3>
+                <p className="text-primary-700 mb-4">
+                  Begin with the AI Readiness Assessment to understand your current level.
+                </p>
+                <Link
+                  to={`/exercises/${filteredExercises[0]?.id}`}
+                  className="btn-primary"
+                >
+                  Start First Exercise
+                </Link>
+              </div>
+              <BookOpen className="w-16 h-16 text-primary-300" />
+            </div>
           </div>
         )}
       </div>

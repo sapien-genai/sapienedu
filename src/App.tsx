@@ -6,6 +6,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ChaptersPage from './pages/ChaptersPage'
 import ExercisesPage from './pages/ExercisesPage'
+import ExerciseDetailPage from './pages/ExerciseDetailPage'
 import PromptsPage from './pages/PromptsPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ProfilePage from './pages/ProfilePage'
@@ -32,6 +33,11 @@ function App() {
         <Route path="/exercises" element={
           <ProtectedRoute>
             <ExercisesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/exercises/:exerciseId" element={
+          <ProtectedRoute>
+            <ExerciseDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/prompts" element={
