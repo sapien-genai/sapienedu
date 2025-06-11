@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Copy, Star, Clock, Zap, BookOpen, Check, ExternalLink } from 'lucide-react'
+import { Copy, Star, Clock, Zap, BookOpen, Check, ExternalLink, MessageSquare, Target, User, TrendingUp, Heart, Lightbulb, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PromptTemplate } from '@/data/promptLibrary'
 import Badge from '@/components/ui/Badge'
