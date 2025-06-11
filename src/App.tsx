@@ -9,6 +9,7 @@ import ExercisesPage from './pages/ExercisesPage'
 import PromptsPage from './pages/PromptsPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ProfilePage from './pages/ProfilePage'
+import SeedDataPage from './pages/SeedDataPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
@@ -46,6 +47,11 @@ function App() {
         <Route path="/profile" element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/seed" element={
+          <ProtectedRoute>
+            <SeedDataPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
