@@ -3,6 +3,7 @@ import { Save, CheckCircle } from 'lucide-react'
 import { AI_READINESS_CATEGORIES, AIReadinessScoring } from '@/data/aiReadinessAssessment'
 import AIReadinessResults from './AIReadinessResults'
 import TimeTrackingExercise from './TimeTrackingExercise'
+import CompetitorAnalysisExercise from './CompetitorAnalysisExercise'
 import type { BookExercise } from '@/data/bookContent'
 
 interface ExerciseFormProps {
@@ -26,6 +27,7 @@ export default function ExerciseForm({
 
   const isAIReadinessAssessment = exercise.id === 'ch1-ex1' || exercise.type === 'assessment'
   const isTimeTracking = exercise.type === 'timeTracking' || exercise.type === 'tracking'
+  const isCompetitorAnalysis = exercise.type === 'competitorAnalysis' || exercise.id.includes('competitor')
 
   useEffect(() => {
     if (initialData) {
@@ -87,6 +89,10 @@ export default function ExerciseForm({
     setFormData(data)
   }
 
+  const handleCompetitorAnalysisChange = (data: any) => {
+    setFormData(data)
+  }
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
 
@@ -120,7 +126,7 @@ export default function ExerciseForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!isTimeTracking && !validateForm()) {
+    if (!isTimeTracking && !isCompetitorAnalysis && !validateForm()) {
       return
     }
 
@@ -383,6 +389,16 @@ export default function ExerciseForm({
       )
     }
 
+    // Special handling for Competitor Analysis
+    if (isCompetitorAnalysis) {
+      return (
+        <CompetitorAnalysisExercise
+          initialData={formData}
+          onDataChange={handleCompetitorAnalysisChange}
+        />
+      )
+    }
+
     const fields: React.ReactNode[] = []
 
     Object.entries(exercise.fields).forEach(([key, fieldConfig]: [string, any]) => {
@@ -434,7 +450,7 @@ export default function ExerciseForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {renderFormFields()}
 
-      {!isTimeTracking && (
+      {!isTimeTracking && !isCompetitorAnalysis && (
         <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
           <button
             type="submit"

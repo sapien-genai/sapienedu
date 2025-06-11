@@ -328,5 +328,48 @@ export const BOOK_EXERCISES: BookExercise[] = [
       ]
     },
     sort_order: 1
+  },
+
+  // Chapter 4 Exercises
+  {
+    id: "ch4-ex1",
+    chapter: 4,
+    exercise_number: 1,
+    title: "Time Tracking Analysis",
+    description: "Track your time spent on different tasks to identify automation opportunities.",
+    type: "timeTracking",
+    fields: {
+      tracking: {
+        categories: ["email", "writing", "research", "meetings", "data", "planning", "creative", "admin"],
+        settings: {
+          hourlyRate: 50,
+          workDaysPerWeek: 5,
+          weeksPerYear: 48
+        }
+      }
+    },
+    sort_order: 1
+  },
+
+  // Chapter 5 Exercises
+  {
+    id: "ch5-ex1",
+    chapter: 5,
+    exercise_number: 1,
+    title: "Competitor AI Analysis",
+    description: "Research and analyze how your competitors are using AI to gain strategic insights.",
+    type: "competitorAnalysis",
+    fields: {
+      analysis: {
+        competitors: [],
+        dimensions: ["AI Tool Usage", "Automation Level", "Innovation Score", "Customer Experience", "Operational Efficiency"],
+        searchTemplates: [
+          "{competitor} AI adoption",
+          "{competitor} automation tools",
+          "{competitor} productivity initiatives"
+        ]
+      }
+    },
+    sort_order: 1
   }
 ]
