@@ -28,7 +28,7 @@ export default function Avatar({
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
     lg: 'w-16 h-16',
-    xl: 'w-24 h-24' // Fixed the typo here
+    xl: 'w-24 h-24'
   }
 
   const iconSizes = {
@@ -45,11 +45,10 @@ export default function Avatar({
     // Use user ID if available, otherwise fall back to email
     const seed = user.id || user.email || 'default'
     
-    // Try DiceBear API with simpler parameters first
+    // Use a single backgroundColor value instead of comma-separated list
     const params = new URLSearchParams({
       seed: seed,
-      backgroundColor: 'b6e3f4,c0aede,d1d4f9',
-      // Remove problematic parameters that might cause issues
+      backgroundColor: 'b6e3f4', // Single color instead of comma-separated list
       format: 'svg'
     })
     
