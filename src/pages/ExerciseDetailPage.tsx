@@ -95,16 +95,17 @@ export default function ExerciseDetailPage() {
         })
       }
 
-      // Load existing response if any
+      // Load existing response if any - Remove .single() to handle no results gracefully
       const { data: responseData, error: responseError } = await supabase
         .from('exercise_responses')
         .select('*')
         .eq('user_id', userId)
         .eq('exercise_id', exerciseId)
-        .single()
 
-      if (!responseError) {
-        setExistingResponse(responseData)
+      if (!responseError && responseData && responseData.length > 0) {
+        setExistingResponse(responseData[0])
+      } else {
+        setExistingResponse(null)
       }
     } catch (error) {
       console.error('Error loading exercise data:', error)
