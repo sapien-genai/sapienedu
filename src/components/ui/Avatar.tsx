@@ -45,10 +45,10 @@ export default function Avatar({
     // Use user ID if available, otherwise fall back to email
     const seed = user.id || user.email || 'default'
     
-    // Use a single backgroundColor value instead of comma-separated list
+    // Use 'background' parameter instead of 'backgroundColor' for DiceBear glass style
     const params = new URLSearchParams({
       seed: seed,
-      backgroundColor: 'b6e3f4', // Single color instead of comma-separated list
+      background: 'b6e3f4', // Changed from backgroundColor to background
       format: 'svg'
     })
     
