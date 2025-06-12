@@ -67,18 +67,45 @@ export default function ExerciseDetailPage() {
         .eq('id', exerciseId)
         .single()
 
-      if (exerciseError) throw exerciseError
-      setExercise(exerciseData)
+      if (exerciseError) {
+        console.warn('Supabase fetch failed, using local data:', exerciseError.message)
+        // Try to find the exercise in local data
+        const localExercise = allExercises.find(ex => ex.id === exerciseId)
+        if (!localExercise) {
+          throw new Error('Exercise not found')
+        }
+        setExercise(localExercise)
+      } else {
+        // Ensure fields is properly handled
+        let fields = exerciseData.fields
+        
+        // If fields is a string, try to parse it
+        if (typeof fields === 'string') {
+          try {
+            fields = JSON.parse(fields)
+          } catch (e) {
+            console.error(`Error parsing fields for exercise ${exerciseData.id}:`, e)
+            fields = {} // Fallback to empty object
+          }
+        }
+        
+        setExercise({
+          ...exerciseData,
+          fields
+        })
+      }
 
       // Load existing response if any
-      const { data: responseData } = await supabase
+      const { data: responseData, error: responseError } = await supabase
         .from('exercise_responses')
         .select('*')
         .eq('user_id', userId)
         .eq('exercise_id', exerciseId)
         .single()
 
-      setExistingResponse(responseData)
+      if (!responseError) {
+        setExistingResponse(responseData)
+      }
     } catch (error) {
       console.error('Error loading exercise data:', error)
       toast.error('Failed to load exercise')
@@ -87,10 +114,14 @@ export default function ExerciseDetailPage() {
 
   const loadExerciseProgress = async (userId: string) => {
     try {
-      const { data: responses } = await supabase
+      const { data: responses, error } = await supabase
         .from('exercise_responses')
         .select('exercise_id')
         .eq('user_id', userId)
+
+      if (error) {
+        console.warn('Error fetching responses:', error.message)
+      }
 
       const completedExerciseIds = new Set(responses?.map(r => r.exercise_id) || [])
       const currentIndex = allExercises.findIndex(ex => ex.id === exerciseId)

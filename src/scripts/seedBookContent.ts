@@ -43,9 +43,17 @@ async function seedBookExercises() {
   console.log('\n🔄 Seeding book exercises...')
   
   for (const exercise of BOOK_EXERCISES) {
+    // Make sure fields is stored as a JSON object, not a string
+    const exerciseData = {
+      ...exercise,
+      fields: typeof exercise.fields === 'string' 
+        ? JSON.parse(exercise.fields) 
+        : exercise.fields
+    }
+    
     const { error } = await supabase
       .from('book_exercises')
-      .upsert(exercise, { onConflict: 'id' })
+      .upsert(exerciseData, { onConflict: 'id' })
     
     if (error) {
       console.error(`❌ Error seeding exercise ${exercise.id}:`, error.message)
