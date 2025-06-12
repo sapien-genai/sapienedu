@@ -28,7 +28,7 @@ export default function Avatar({
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
     lg: 'w-16 h-16',
-    xl: 'w-24 h-24'
+    xl: 'w-24 w-24'
   }
 
   const iconSizes = {
@@ -38,21 +38,25 @@ export default function Avatar({
     xl: 'w-12 h-12'
   }
 
-  // Generate avatar URL using DiceBear Glass style
+  // Generate avatar URL using Robohash (AI/robot themed avatars)
   const getAvatarUrl = () => {
     if (!user?.id && !user?.email) return null
     
     // Use user ID if available, otherwise fall back to email
     const seed = user.id || user.email || 'default'
     
-    // Use 'background' parameter instead of 'backgroundColor' for DiceBear glass style
-    const params = new URLSearchParams({
-      seed: seed,
-      background: 'b6e3f4', // Changed from backgroundColor to background
-      format: 'svg'
-    })
+    // Get pixel size based on component size
+    const pixelSize = {
+      sm: 64,
+      md: 80,
+      lg: 128,
+      xl: 192
+    }[size]
     
-    return `https://api.dicebear.com/7.x/glass/svg?${params.toString()}`
+    // Robohash provides AI/robot themed avatars with various sets
+    // set=set1 gives robots, set=set2 gives monsters, set=set3 gives robot heads
+    // We'll use set3 for clean, AI-themed robot heads
+    return `https://robohash.org/${encodeURIComponent(seed)}.png?set=set3&size=${pixelSize}x${pixelSize}&bgset=bg2`
   }
 
   const avatarUrl = getAvatarUrl()
@@ -89,7 +93,7 @@ export default function Avatar({
   }, [avatarUrl])
 
   return (
-    <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative ${className}`}>
+    <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gradient-to-br from-primary-100 to-success-100 flex items-center justify-center relative ${className}`}>
       {avatarUrl && !imageError && (
         <>
           <img
@@ -103,14 +107,14 @@ export default function Avatar({
           
           {/* Loading state */}
           {isLoading && (
-            <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-200 to-success-200 animate-pulse rounded-full" />
           )}
         </>
       )}
       
-      {/* Fallback icon */}
+      {/* Fallback icon with gradient background */}
       {shouldShowFallback && (
-        <div className="w-full h-full bg-primary-100 text-primary-600 flex items-center justify-center">
+        <div className="w-full h-full bg-gradient-to-br from-primary-500 to-success-500 text-white flex items-center justify-center">
           <User className={iconSizes[size]} />
         </div>
       )}
