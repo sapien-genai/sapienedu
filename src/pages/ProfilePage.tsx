@@ -22,7 +22,7 @@ export default function ProfilePage() {
     savedPrompts: 0,
     joinDate: ''
   })
-  const [avatarKey, setAvatarKey] = useState(0) // For forcing avatar refresh
+  const [avatarSeed, setAvatarSeed] = useState(Date.now().toString()) // For forcing avatar refresh
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function ProfilePage() {
   }
 
   const refreshAvatar = () => {
-    setAvatarKey(prev => prev + 1)
+    setAvatarSeed(Date.now().toString())
   }
 
   const exportData = async () => {
@@ -176,8 +176,11 @@ export default function ProfilePage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Picture</h2>
               
               <div className="flex items-center space-x-6">
-                <div key={avatarKey}>
-                  <Avatar user={user} size="xl" />
+                <div className="relative">
+                  <Avatar 
+                    user={{ ...user, id: user.id + avatarSeed }} 
+                    size="xl" 
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Your Avatar</h3>
@@ -190,7 +193,7 @@ export default function ProfilePage() {
                     className="btn-secondary flex items-center text-sm"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh Preview
+                    Try Different Style
                   </button>
                 </div>
               </div>
@@ -286,7 +289,10 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <div className="card">
               <div className="flex items-center space-x-4 mb-6">
-                <Avatar user={user} size="lg" />
+                <Avatar 
+                  user={user} 
+                  size="lg" 
+                />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
                     {user?.user_metadata?.name || user?.email}
