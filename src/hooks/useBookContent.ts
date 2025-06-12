@@ -115,7 +115,33 @@ export function useBookPrompts(filters?: {
           )
         }
 
-        setPrompts(filteredData)
+        // Process the data to ensure tags is properly handled
+        const processedData = filteredData.map(prompt => {
+          // Ensure tags is an array, not a string
+          let tags = prompt.tags
+          
+          // If tags is a string, try to parse it
+          if (typeof tags === 'string') {
+            try {
+              tags = JSON.parse(tags)
+            } catch (e) {
+              console.error(`Error parsing tags for prompt ${prompt.id}:`, e)
+              tags = [] // Fallback to empty array
+            }
+          }
+          
+          // Ensure tags is always an array
+          if (!Array.isArray(tags)) {
+            tags = []
+          }
+          
+          return {
+            ...prompt,
+            tags
+          }
+        })
+
+        setPrompts(processedData)
       }
     } catch (err: any) {
       // If network error, use local data with filters
@@ -189,7 +215,28 @@ export function useBookExercises(chapter?: number) {
         
         setExercises(filteredData)
       } else {
-        setExercises(data || BOOK_EXERCISES)
+        // Process the data to ensure fields is properly handled
+        const processedData = data?.map(exercise => {
+          // Ensure fields is an object, not a string
+          let fields = exercise.fields
+          
+          // If fields is a string, try to parse it
+          if (typeof fields === 'string') {
+            try {
+              fields = JSON.parse(fields)
+            } catch (e) {
+              console.error(`Error parsing fields for exercise ${exercise.id}:`, e)
+              fields = {} // Fallback to empty object
+            }
+          }
+          
+          return {
+            ...exercise,
+            fields
+          }
+        }) || BOOK_EXERCISES
+        
+        setExercises(processedData)
       }
     } catch (err: any) {
       // If network error, use local data

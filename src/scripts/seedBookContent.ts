@@ -24,9 +24,15 @@ async function seedBookPrompts() {
   console.log('\n🔄 Seeding book prompts...')
   
   for (const prompt of BOOK_PROMPTS) {
+    // Ensure tags is stored as a JSON array, not a string
+    const promptData = {
+      ...prompt,
+      tags: Array.isArray(prompt.tags) ? prompt.tags : []
+    }
+    
     const { error } = await supabase
       .from('book_prompts')
-      .upsert(prompt, { onConflict: 'id' })
+      .upsert(promptData, { onConflict: 'id' })
     
     if (error) {
       console.error(`❌ Error seeding prompt ${prompt.id}:`, error.message)

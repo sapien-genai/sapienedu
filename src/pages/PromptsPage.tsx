@@ -64,7 +64,7 @@ export default function PromptsPage() {
   const allCategories = Array.from(new Set([...libraryCategories, ...bookCategories])).sort()
 
   // Combine tags from both sources
-  const bookTags = Array.from(new Set(bookPrompts.flatMap(p => p.tags))).sort()
+  const bookTags = Array.from(new Set(bookPrompts.flatMap(p => p.tags || []))).sort()
   const allTags = Array.from(new Set([...libraryTags, ...bookTags])).sort()
 
   useEffect(() => {
@@ -91,19 +91,25 @@ export default function PromptsPage() {
 
   const loadUserPrompts = async (userId: string) => {
     try {
-      const { data: prompts } = await supabase
+      const { data: prompts, error } = await supabase
         .from('prompts')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
-      setUserPrompts(prompts || [])
-      
-      // Track which book prompts have been saved
-      const savedBookPromptTitles = new Set(prompts?.map(p => p.title) || [])
-      setSavedPrompts(savedBookPromptTitles)
+      if (error) {
+        console.warn('Error loading user prompts:', error.message)
+        setUserPrompts([])
+      } else {
+        setUserPrompts(prompts || [])
+        
+        // Track which book prompts have been saved
+        const savedBookPromptTitles = new Set(prompts?.map(p => p.title) || [])
+        setSavedPrompts(savedBookPromptTitles)
+      }
     } catch (error) {
       console.error('Error loading user prompts:', error)
+      setUserPrompts([])
     }
   }
 
@@ -206,16 +212,8 @@ export default function PromptsPage() {
   }
 
   if (bookPromptsError) {
-    return (
-      <DashboardLayout user={user}>
-        <div className="text-center py-12">
-          <div className="text-red-600 mb-4">Error loading book prompts: {bookPromptsError}</div>
-          <button onClick={() => window.location.reload()} className="btn-primary">
-            Retry
-          </button>
-        </div>
-      </DashboardLayout>
-    )
+    console.warn('Book prompts error:', bookPromptsError)
+    // Don't show error to user, just continue with available data
   }
 
   const totalPrompts = libraryPrompts.length + bookPrompts.length + userPrompts.length
