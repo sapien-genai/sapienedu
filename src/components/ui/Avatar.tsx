@@ -67,9 +67,8 @@ export default function Avatar({
     setIsLoading(false)
   }
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('Avatar failed to load for:', user?.email || user?.id, 'URL:', avatarUrl)
-    console.error('Error details:', e)
+  const handleImageError = () => {
+    console.warn('Avatar failed to load for:', user?.email || user?.id, 'URL:', avatarUrl)
     setImageError(true)
     setImageLoaded(false)
     setIsLoading(false)
