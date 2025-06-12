@@ -60,7 +60,7 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-gray-50">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -78,7 +78,7 @@ export default function HomePage() {
             
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
               Master AI Integration in
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-success-600"> 90 Days</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-black"> 90 Days</span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
@@ -115,7 +115,7 @@ export default function HomePage() {
               const Icon = feature.icon
               return (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-success-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-black rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -132,12 +132,12 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-20 bg-gradient-to-r from-primary-600 to-success-600">
+      <div className="py-20 bg-gradient-to-r from-primary-600 to-black">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Transform Your Workflow?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-purple-100 mb-8">
             Join thousands of professionals who have already revolutionized their productivity with AI.
           </p>
           <Link to="/auth/register" className="bg-white text-primary-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
