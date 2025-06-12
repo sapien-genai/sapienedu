@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { CHAPTERS, BOOK_PROMPTS, BOOK_EXERCISES } from '@/data/bookContent'
 import type { Chapter, BookPrompt, BookExercise } from '@/data/bookContent'
 
 export function useChapters() {
@@ -13,15 +14,24 @@ export function useChapters() {
 
   const loadChapters = async () => {
     try {
+      // Try to fetch from Supabase first
       const { data, error } = await supabase
         .from('chapters')
         .select('*')
         .order('number')
 
-      if (error) throw error
-      setChapters(data || [])
+      if (error) {
+        // If Supabase fails, use local data
+        console.warn('Supabase fetch failed, using local data:', error.message)
+        setChapters(CHAPTERS)
+      } else {
+        setChapters(data || CHAPTERS)
+      }
     } catch (err: any) {
-      setError(err.message)
+      // If network error, use local data
+      console.warn('Network error, using local data:', err.message)
+      setChapters(CHAPTERS)
+      setError(null) // Don't show error to user, just use local data
     } finally {
       setLoading(false)
     }
@@ -46,6 +56,7 @@ export function useBookPrompts(filters?: {
 
   const loadPrompts = async () => {
     try {
+      // Try to fetch from Supabase first
       let query = supabase
         .from('book_prompts')
         .select('*')
@@ -66,20 +77,75 @@ export function useBookPrompts(filters?: {
 
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        // If Supabase fails, use local data with filters
+        console.warn('Supabase fetch failed, using local data:', error.message)
+        let filteredData = [...BOOK_PROMPTS]
+        
+        if (filters?.chapter) {
+          filteredData = filteredData.filter(prompt => prompt.chapter === filters.chapter)
+        }
+        
+        if (filters?.category) {
+          filteredData = filteredData.filter(prompt => prompt.category === filters.category)
+        }
+        
+        if (filters?.search) {
+          const searchLower = filters.search.toLowerCase()
+          filteredData = filteredData.filter(prompt =>
+            prompt.title.toLowerCase().includes(searchLower) ||
+            prompt.prompt.toLowerCase().includes(searchLower)
+          )
+        }
+        
+        if (filters?.tags && filters.tags.length > 0) {
+          filteredData = filteredData.filter(prompt =>
+            filters.tags!.some(tag => prompt.tags.includes(tag))
+          )
+        }
+        
+        setPrompts(filteredData)
+      } else {
+        let filteredData = data || []
 
-      let filteredData = data || []
+        // Filter by tags if specified (since Supabase query doesn't handle this)
+        if (filters?.tags && filters.tags.length > 0) {
+          filteredData = filteredData.filter(prompt =>
+            filters.tags!.some(tag => prompt.tags.includes(tag))
+          )
+        }
 
-      // Filter by tags if specified
+        setPrompts(filteredData)
+      }
+    } catch (err: any) {
+      // If network error, use local data with filters
+      console.warn('Network error, using local data:', err.message)
+      let filteredData = [...BOOK_PROMPTS]
+      
+      if (filters?.chapter) {
+        filteredData = filteredData.filter(prompt => prompt.chapter === filters.chapter)
+      }
+      
+      if (filters?.category) {
+        filteredData = filteredData.filter(prompt => prompt.category === filters.category)
+      }
+      
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase()
+        filteredData = filteredData.filter(prompt =>
+          prompt.title.toLowerCase().includes(searchLower) ||
+          prompt.prompt.toLowerCase().includes(searchLower)
+        )
+      }
+      
       if (filters?.tags && filters.tags.length > 0) {
         filteredData = filteredData.filter(prompt =>
           filters.tags!.some(tag => prompt.tags.includes(tag))
         )
       }
-
+      
       setPrompts(filteredData)
-    } catch (err: any) {
-      setError(err.message)
+      setError(null) // Don't show error to user, just use local data
     } finally {
       setLoading(false)
     }
@@ -99,6 +165,7 @@ export function useBookExercises(chapter?: number) {
 
   const loadExercises = async () => {
     try {
+      // Try to fetch from Supabase first
       let query = supabase
         .from('book_exercises')
         .select('*')
@@ -111,10 +178,30 @@ export function useBookExercises(chapter?: number) {
 
       const { data, error } = await query
 
-      if (error) throw error
-      setExercises(data || [])
+      if (error) {
+        // If Supabase fails, use local data
+        console.warn('Supabase fetch failed, using local data:', error.message)
+        let filteredData = [...BOOK_EXERCISES]
+        
+        if (chapter) {
+          filteredData = filteredData.filter(exercise => exercise.chapter === chapter)
+        }
+        
+        setExercises(filteredData)
+      } else {
+        setExercises(data || BOOK_EXERCISES)
+      }
     } catch (err: any) {
-      setError(err.message)
+      // If network error, use local data
+      console.warn('Network error, using local data:', err.message)
+      let filteredData = [...BOOK_EXERCISES]
+      
+      if (chapter) {
+        filteredData = filteredData.filter(exercise => exercise.chapter === chapter)
+      }
+      
+      setExercises(filteredData)
+      setError(null) // Don't show error to user, just use local data
     } finally {
       setLoading(false)
     }
