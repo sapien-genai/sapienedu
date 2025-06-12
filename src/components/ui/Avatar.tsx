@@ -28,7 +28,7 @@ export default function Avatar({
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
     lg: 'w-16 h-16',
-    xl: 'w-24 w-24'
+    xl: 'w-24 h-24'
   }
 
   const iconSizes = {
@@ -38,25 +38,17 @@ export default function Avatar({
     xl: 'w-12 h-12'
   }
 
-  // Generate avatar URL using Robohash (AI/robot themed avatars)
+  // Generate avatar URL using DiceBear glass style
   const getAvatarUrl = () => {
     if (!user?.id && !user?.email) return null
     
     // Use user ID if available, otherwise fall back to email
     const seed = user.id || user.email || 'default'
     
-    // Get pixel size based on component size
-    const pixelSize = {
-      sm: 64,
-      md: 80,
-      lg: 128,
-      xl: 192
-    }[size]
+    // DiceBear glass style with professional color palette
+    const backgroundColor = 'b6e3f4,c0aede,d1d4f9,fde68a,fed7aa'
     
-    // Robohash provides AI/robot themed avatars with various sets
-    // set=set1 gives robots, set=set2 gives monsters, set=set3 gives robot heads
-    // We'll use set3 for clean, AI-themed robot heads
-    return `https://robohash.org/${encodeURIComponent(seed)}.png?set=set3&size=${pixelSize}x${pixelSize}&bgset=bg2`
+    return `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}&format=svg`
   }
 
   const avatarUrl = getAvatarUrl()
