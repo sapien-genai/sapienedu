@@ -94,7 +94,6 @@ export default function Avatar({
             className={`w-full h-full object-cover transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
-            crossOrigin="anonymous"
           />
           
           {/* Loading state */}
