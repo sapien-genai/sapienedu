@@ -3,16 +3,52 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Validate environment variables
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase environment variables. Please check your .env file.')
+  console.error('Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY')
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-})
+// Validate URL format
+if (supabaseUrl && !supabaseUrl.startsWith('https://')) {
+  console.error('VITE_SUPABASE_URL must be a valid HTTPS URL starting with https://')
+}
+
+// Create a fallback client to prevent crashes during development
+const createSupabaseClient = () => {
+  try {
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration')
+    }
+    
+    return createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to initialize Supabase client:', error)
+    // Return a mock client that prevents crashes
+    return {
+      auth: {
+        signUp: () => Promise.reject(new Error('Supabase not configured')),
+        signInWithPassword: () => Promise.reject(new Error('Supabase not configured')),
+        signOut: () => Promise.reject(new Error('Supabase not configured')),
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+      from: () => ({
+        select: () => Promise.reject(new Error('Supabase not configured')),
+        insert: () => Promise.reject(new Error('Supabase not configured')),
+        update: () => Promise.reject(new Error('Supabase not configured')),
+        delete: () => Promise.reject(new Error('Supabase not configured')),
+      }),
+    } as any
+  }
+}
+
+export const supabase = createSupabaseClient()
 
 export type Database = {
   public: {
