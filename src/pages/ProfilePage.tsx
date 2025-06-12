@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Mail, Calendar, Download, Save } from 'lucide-react'
+import { User, Mail, Calendar, Download, Save, RefreshCw } from 'lucide-react'
 import { getUser, signOut } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Badge from '@/components/ui/Badge'
+import Avatar from '@/components/ui/Avatar'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -21,6 +22,7 @@ export default function ProfilePage() {
     savedPrompts: 0,
     joinDate: ''
   })
+  const [avatarKey, setAvatarKey] = useState(0) // For forcing avatar refresh
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -109,6 +111,10 @@ export default function ProfilePage() {
     }
   }
 
+  const refreshAvatar = () => {
+    setAvatarKey(prev => prev + 1)
+  }
+
   const exportData = async () => {
     try {
       // Get all user data
@@ -165,6 +171,31 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Form */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Avatar Section */}
+            <div className="card">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Picture</h2>
+              
+              <div className="flex items-center space-x-6">
+                <div key={avatarKey}>
+                  <Avatar user={user} size="xl" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Your Avatar</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Your unique avatar is automatically generated based on your account. 
+                    It will appear consistently across the platform.
+                  </p>
+                  <button
+                    onClick={refreshAvatar}
+                    className="btn-secondary flex items-center text-sm"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="card">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
               
@@ -254,6 +285,16 @@ export default function ProfilePage() {
           {/* Stats Sidebar */}
           <div className="space-y-6">
             <div className="card">
+              <div className="flex items-center space-x-4 mb-6">
+                <Avatar user={user} size="lg" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {user?.user_metadata?.name || user?.email}
+                  </h3>
+                  <p className="text-sm text-gray-600">Member since {stats.joinDate}</p>
+                </div>
+              </div>
+              
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

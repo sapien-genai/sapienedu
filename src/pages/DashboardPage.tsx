@@ -8,6 +8,7 @@ import ProgressBar from '@/components/ui/ProgressBar'
 import CountdownTimer from '@/components/ui/CountdownTimer'
 import Badge from '@/components/ui/Badge'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import Avatar from '@/components/ui/Avatar'
 
 interface UserStats {
   completedExercises: number
@@ -153,6 +154,8 @@ export default function DashboardPage() {
     }
   ]
 
+  const displayName = user?.user_metadata?.name || user?.email || 'there'
+
   return (
     <DashboardLayout user={user}>
       <div className="space-y-8">
@@ -160,9 +163,14 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-r from-primary-500 to-success-500 rounded-2xl p-8 text-white">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h1 className="text-3xl font-bold mb-4">
-                Welcome back, {user?.user_metadata?.name || user?.email}! 👋
-              </h1>
+              <div className="flex items-center space-x-4 mb-4">
+                <Avatar user={user} size="lg" className="border-2 border-white/20" />
+                <div>
+                  <h1 className="text-3xl font-bold">
+                    Welcome back, {displayName}! 👋
+                  </h1>
+                </div>
+              </div>
               <p className="text-lg opacity-90 mb-6">
                 You're {stats.completionPercentage}% through your AI integration journey. 
                 Keep up the great work!

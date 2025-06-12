@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { ThumbsUp, MessageSquare, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react'
+import { ThumbsUp, MessageSquare, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
 import { FEEDBACK_TYPES } from '@/types/ratings'
 import type { PromptFeedback } from '@/types/ratings'
 import Badge from '@/components/ui/Badge'
+import Avatar from '@/components/ui/Avatar'
 
 interface FeedbackListProps {
   feedback: PromptFeedback[]
@@ -90,9 +91,7 @@ export default function FeedbackList({ feedback, onHelpful, className = '' }: Fe
             <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-gray-600" />
-                  </div>
+                  <Avatar user={{ id: item.user_id }} size="sm" />
                   <div>
                     <div className="flex items-center space-x-2">
                       <Badge 

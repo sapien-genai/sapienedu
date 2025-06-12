@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Search, User } from 'lucide-react'
+import { Bell, Search, ChevronDown } from 'lucide-react'
 import { signOut } from '@/lib/auth'
+import Avatar from '@/components/ui/Avatar'
 
 interface HeaderProps {
   user?: {
+    id?: string
     name?: string
     email?: string
+    user_metadata?: {
+      name?: string
+    }
   }
 }
 
@@ -22,6 +27,8 @@ export default function Header({ user }: HeaderProps) {
       console.error('Error signing out:', error)
     }
   }
+
+  const displayName = user?.user_metadata?.name || user?.name || user?.email || 'User'
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -52,21 +59,34 @@ export default function Header({ user }: HeaderProps) {
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center space-x-2 p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                className="flex items-center space-x-3 p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
               >
-                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+                <Avatar user={user} size="md" />
+                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-medium text-gray-900 truncate max-w-32">
+                    {displayName}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate max-w-32">
+                    {user?.email}
+                  </div>
                 </div>
-                <span className="text-sm font-medium hidden sm:block">
-                  {user?.name || user?.email || 'User'}
-                </span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
 
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <div className="text-sm font-medium text-gray-900">{user?.name}</div>
-                    <div className="text-xs text-gray-500">{user?.email}</div>
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <Avatar user={user} size="lg" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {displayName}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {user?.email}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <button
                     onClick={() => {
