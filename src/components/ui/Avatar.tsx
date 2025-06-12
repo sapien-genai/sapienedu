@@ -45,10 +45,10 @@ export default function Avatar({
     // Use user ID if available, otherwise fall back to email
     const seed = user.id || user.email || 'default'
     
-    // DiceBear glass style with professional color palette
-    const backgroundColor = 'b6e3f4,c0aede,d1d4f9,fde68a,fed7aa'
+    // DiceBear glass style with single background color
+    const backgroundColor = 'b6e3f4'
     
-    return `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}&format=svg`
+    return `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}`
   }
 
   const avatarUrl = getAvatarUrl()
