@@ -5,6 +5,7 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ChaptersPage from './pages/ChaptersPage'
+import ChapterDetailPage from './pages/ChapterDetailPage'
 import ExercisesPage from './pages/ExercisesPage'
 import ExerciseDetailPage from './pages/ExerciseDetailPage'
 import PromptsPage from './pages/PromptsPage'
@@ -28,6 +29,11 @@ function App() {
         <Route path="/chapters" element={
           <ProtectedRoute>
             <ChaptersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/chapters/:chapterNumber" element={
+          <ProtectedRoute>
+            <ChapterDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/exercises" element={
