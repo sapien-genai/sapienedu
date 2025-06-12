@@ -73,7 +73,7 @@ export async function seedBookContent() {
     await seedBookExercises()
     
     console.log('\n🎉 Book content seeding completed successfully!')
-    console.log('📚 You can now view the prompts in the Prompt Library!')
+    console.log('📚 You can now view the exercises in the Exercises page!')
     
   } catch (error: any) {
     console.error('\n❌ Error seeding book content:', error.message)

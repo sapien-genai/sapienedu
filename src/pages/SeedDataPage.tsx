@@ -139,8 +139,14 @@ export default function SeedDataPage() {
               </div>
               <div className="flex space-x-4">
                 <button
-                  onClick={() => navigate('/prompts')}
+                  onClick={() => navigate('/exercises')}
                   className="btn-primary"
+                >
+                  View Exercises
+                </button>
+                <button
+                  onClick={() => navigate('/prompts')}
+                  className="btn-secondary"
                 >
                   View Prompt Library
                 </button>
