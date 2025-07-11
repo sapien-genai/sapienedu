@@ -4,6 +4,7 @@ import {
   Home, 
   BookOpen, 
   Target, 
+  Flag,
   MessageSquare, 
   Trophy, 
   User, 
@@ -15,6 +16,7 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Chapters', href: '/chapters', icon: BookOpen },
+  { name: 'Goals', href: '/goals', icon: Flag },
   { name: 'Exercises', href: '/exercises', icon: Target },
   { name: 'Prompt Library', href: '/prompts', icon: MessageSquare },
   { name: 'Resources', href: '/resources', icon: Trophy },

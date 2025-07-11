@@ -8,6 +8,7 @@ import ChaptersPage from './pages/ChaptersPage'
 import ChapterDetailPage from './pages/ChapterDetailPage'
 import ExercisesPage from './pages/ExercisesPage'
 import ExerciseDetailPage from './pages/ExerciseDetailPage'
+import GoalSettingPage from './pages/GoalSettingPage'
 import PromptsPage from './pages/PromptsPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ProfilePage from './pages/ProfilePage'
@@ -44,6 +45,11 @@ function App() {
         <Route path="/exercises/:exerciseId" element={
           <ProtectedRoute>
             <ExerciseDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/goals" element={
+          <ProtectedRoute>
+            <GoalSettingPage />
           </ProtectedRoute>
         } />
         <Route path="/prompts" element={
