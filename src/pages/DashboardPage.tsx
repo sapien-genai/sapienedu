@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Trophy, Target, Clock, Zap, ChevronRight } from 'lucide-react'
+import { Trophy, Target, Clock, Zap, ChevronRight, Flag } from 'lucide-react'
 import { getUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import DashboardLayout from '@/components/layout/DashboardLayout'
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [recentExercises, setRecentExercises] = useState<any[]>([])
+  const [userGoals, setUserGoals] = useState<any[]>([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function DashboardPage() {
       setUser(currentUser)
       await loadUserStats(currentUser.id)
       await loadRecentExercises(currentUser.id)
+      await loadUserGoals(currentUser.id)
     } catch (error) {
       console.error('Error loading dashboard:', error)
       navigate('/auth/login')
@@ -112,6 +114,25 @@ export default function DashboardPage() {
       setRecentExercises(exercises || [])
     } catch (error) {
       console.error('Error loading recent exercises:', error)
+    }
+  }
+
+  const loadUserGoals = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        setUserGoals(data[0].goals || [])
+      }
+    } catch (error) {
+      console.error('Error loading user goals:', error)
     }
   }
 
@@ -267,42 +288,84 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="card">
+          <div className="card space-y-3">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link to="/chapters" className="block p-4 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-primary-900">Browse Chapters</div>
-                    <div className="text-sm text-primary-600">Explore all 12 chapters</div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-primary-600" />
+            <Link to="/chapters" className="block p-4 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-primary-900">Browse Chapters</div>
+                  <div className="text-sm text-primary-600">Explore all 12 chapters</div>
                 </div>
-              </Link>
-              
-              <Link to="/prompts" className="block p-4 bg-success-50 rounded-lg hover:bg-success-100 transition-colors duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-success-900">Prompt Library</div>
-                    <div className="text-sm text-success-600">Manage your prompts</div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-success-600" />
+                <ChevronRight className="w-5 h-5 text-primary-600" />
+              </div>
+            </Link>
+            
+            <Link to="/goals" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-blue-900">Set 90-Day Goals</div>
+                  <div className="text-sm text-blue-600">Plan your AI integration journey</div>
                 </div>
-              </Link>
-              
-              <Link to="/resources" className="block p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-yellow-900">AI Tools & Resources</div>
-                    <div className="text-sm text-yellow-600">Discover new tools</div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-yellow-600" />
+                <ChevronRight className="w-5 h-5 text-blue-600" />
+              </div>
+            </Link>
+            
+            <Link to="/prompts" className="block p-4 bg-success-50 rounded-lg hover:bg-success-100 transition-colors duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-success-900">Prompt Library</div>
+                  <div className="text-sm text-success-600">Manage your prompts</div>
                 </div>
-              </Link>
-            </div>
+                <ChevronRight className="w-5 h-5 text-success-600" />
+              </div>
+            </Link>
+            
+            <Link to="/resources" className="block p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-yellow-900">AI Tools & Resources</div>
+                  <div className="text-sm text-yellow-600">Discover new tools</div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-yellow-600" />
+              </div>
+            </Link>
           </div>
         </div>
       </div>
+
+      {/* Goals Section */}
+      {userGoals.length > 0 && (
+        <div className="card mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+              <Flag className="w-5 h-5 text-primary-600 mr-2" />
+              Your 90-Day AI Integration Goals
+            </h3>
+            <Link to="/goals" className="text-primary-600 hover:text-primary-500 text-sm font-medium">
+              View All
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {userGoals.slice(0, 3).map((goal: any) => (
+              <div key={goal.id} className="p-4 border border-gray-200 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-1">{goal.title}</h4>
+                <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
+                  {goal.category && (
+                    <span className="capitalize">{goal.category}</span>
+                  )}
+                  {goal.deadline && (
+                    <span>Due: {new Date(goal.deadline).toLocaleDateString()}</span>
+                  )}
+                </div>
+                {goal.description && (
+                  <p className="text-sm text-gray-600 line-clamp-2">{goal.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }
