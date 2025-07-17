@@ -186,6 +186,61 @@ export type Database = {
           used_ai?: boolean
         }
       }
+      user_goals: {
+        Row: {
+          id: string
+          user_id: string
+          goals: any
+          vision: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          goals?: any
+          vision?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          goals?: any
+          vision?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      goal_milestones: {
+        Row: {
+          id: string
+          user_id: string
+          goal_id: string
+          title: string
+          target_date: string | null
+          completed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          goal_id: string
+          title: string
+          target_date?: string | null
+          completed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          goal_id?: string
+          title?: string
+          target_date?: string | null
+          completed?: boolean
+          created_at?: string
+        }
+      }
     }
   }
 }
